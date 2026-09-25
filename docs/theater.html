@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Orchestrator Theater — orchestrator-runtime</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0e27;
+      --bg-2: #0f172a;
+      --bg-3: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --text-dim: #94a3b8;
+      --text-mute: #64748b;
+      --accent: #22c55e;
+      --blue: #3b82f6;
+      --cyan: #06b6d4;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --purple: #a855f7;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, var(--bg) 0%, var(--bg-2) 50%, #1e1b4b 100%);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Header */
+    header {
+      padding: 32px 40px 24px;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 8px;
+    }
+
+    .logo {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent), var(--cyan));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 20px;
+      box-shadow: 0 0 24px rgba(34, 197, 94, 0.4);
+    }
+
+    h1 {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .tagline {
+      color: var(--text-dim);
+      font-size: 15px;
+      margin-bottom: 20px;
+      margin-left: 56px;
+    }
+
+    .controls {
+      display: flex;
+      gap: 8px;
+      margin-left: 56px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    button {
+      background: var(--bg-3);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    button:hover {
+      border-color: var(--accent);
+      background: rgba(34, 197, 94, 0.08);
+    }
+
+    button.primary {
+      background: var(--accent);
+      color: #022c1a;
+      border-color: var(--accent);
+      font-weight: 600;
+    }
+
+    button.primary:hover {
+      background: #16a34a;
+    }
+
+    .speed-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg-3);
+      border: 1px solid var(--border);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+    }
+
+    .speed-pill .label { color: var(--text-mute); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    /* Main grid */
+    main {
+      display: grid;
+      grid-template-columns: 280px 1fr 280px;
+      gap: 24px;
+      padding: 24px 40px;
+      min-height: calc(100vh - 220px);
+    }
+
+    .lane {
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .lane h2 {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-mute);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .lane.queue h2 .dot { background: var(--text-mute); }
+    .lane.active h2 .dot { background: var(--amber); animation: pulse-dot 1s infinite; }
+    .lane.done h2 .dot { background: var(--accent); }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .count {
+      margin-left: auto;
+      background: var(--bg-3);
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    /* Ticket cards */
+    .tickets {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      overflow-y: auto;
+      flex: 1;
+      max-height: 70vh;
+    }
+
+    .ticket {
+      background: var(--bg-3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .ticket:hover {
+      border-color: var(--blue);
+      transform: translateY(-1px);
+    }
+
+    .ticket::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      background: var(--text-mute);
+      transition: background 0.2s ease;
+    }
+
+    .ticket.claimed::before { background: var(--blue); }
+    .ticket.executing::before { background: var(--amber); }
+    .ticket.verifying::before { background: var(--cyan); }
+    .ticket.done::before { background: var(--accent); }
+    .ticket.failed::before { background: var(--red); }
+
+    .ticket.executing {
+      animation: executing-glow 2s infinite;
+    }
+
+    @keyframes executing-glow {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+      50% { box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.15); }
+    }
+
+    .ticket-id {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--text-mute);
+      margin-bottom: 4px;
+    }
+
+    .ticket-title {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      line-height: 1.3;
+    }
+
+    .ticket-meta {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+
+    .pill {
+      background: rgba(255, 255, 255, 0.05);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .pill.holder { color: var(--blue); }
+    .pill.token { color: var(--purple); }
+    .pill.priority { color: var(--amber); }
+    .pill.retries { color: var(--red); }
+
+    .verifier-row {
+      display: flex;
+      gap: 4px;
+      margin-top: 8px;
+    }
+
+    .verifier {
+      flex: 1;
+      height: 4px;
+      border-radius: 2px;
+      background: var(--bg);
+      transition: background 0.3s ease;
+      position: relative;
+    }
+
+    .verifier.pass { background: var(--accent); }
+    .verifier.fail { background: var(--red); }
+    .verifier.pending {
+      background: var(--bg);
+      background-image: linear-gradient(90deg, transparent, rgba(6, 182, 212, 0.3), transparent);
+      background-size: 50% 100%;
+      animation: shimmer 1.5s infinite;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: -50% 0; }
+      100% { background-position: 150% 0; }
+    }
+
+    /* Active lane */
+    .lane.active {
+      position: relative;
+    }
+
+    .detail-panel {
+      background: var(--bg-3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+      min-height: 80px;
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--text-dim);
+    }
+
+    .detail-panel.empty {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-style: italic;
+      color: var(--text-mute);
+    }
+
+    .detail-panel h3 {
+      color: var(--text);
+      font-size: 14px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .lifecycle-step {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 0;
+      font-size: 12px;
+    }
+
+    .lifecycle-step .check {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--bg);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      color: var(--text-mute);
+    }
+
+    .lifecycle-step.done .check { background: var(--accent); color: #022c1a; }
+    .lifecycle-step.active .check { background: var(--amber); color: #422006; animation: pulse-dot 1s infinite; }
+
+    /* Outbox cascade */
+    .cascade {
+      margin-top: 12px;
+      padding: 10px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 6px;
+      border-left: 3px solid var(--cyan);
+    }
+
+    .cascade-step {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 3px 0;
+      font-size: 11px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-dim);
+    }
+
+    .cascade-step.applied { color: var(--accent); }
+    .cascade-step.applied::before { content: '✓'; color: var(--accent); }
+    .cascade-step:not(.applied)::before { content: '○'; color: var(--text-mute); }
+
+    /* Footer / metrics */
+    footer {
+      padding: 16px 40px 32px;
+      border-top: 1px solid var(--border);
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+
+    .metric {
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 18px;
+    }
+
+    .metric-label {
+      font-size: 10px;
+      color: var(--text-mute);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+    }
+
+    .metric-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+
+    .metric-unit {
+      font-size: 12px;
+      color: var(--text-mute);
+      font-weight: 400;
+    }
+
+    .heartbeat-led {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .heartbeat-led .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: heartbeat-pulse 1.2s infinite;
+    }
+
+    @keyframes heartbeat-pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.3); }
+    }
+
+    .watchdog-bar {
+      width: 100%;
+      height: 4px;
+      background: var(--bg);
+      border-radius: 2px;
+      margin-top: 8px;
+      overflow: hidden;
+    }
+
+    .watchdog-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--amber), var(--red));
+      width: 100%;
+      transition: width 0.3s linear;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* Sparkline */
+    .sparkline {
+      margin-top: 6px;
+      height: 20px;
+      width: 100%;
+    }
+
+    .sparkline polyline {
+      fill: none;
+      stroke: var(--accent);
+      stroke-width: 1.5;
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      main {
+        grid-template-columns: 1fr;
+      }
+      footer {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="logo">⚡</div>
+      <h1>Orchestrator Theater</h1>
+    </div>
+    <p class="tagline">Watch <strong>orchestrator-runtime</strong> working in real time. Tickets flow through the lifecycle. Verifiers vote. Outbox cascades. Watchdog ticks.</p>
+    <div class="controls">
+      <button id="play" class="primary">▶ Play</button>
+      <button id="reset">↺ Reset</button>
+      <span class="speed-pill">
+        <span class="label">Speed</span>
+        <button id="speed-btn" style="background: transparent; border: 0; padding: 0; color: var(--accent); font-weight: 700; cursor: pointer;">1x</button>
+      </span>
+      <span class="speed-pill">
+        <span class="label">Spawn</span>
+        <button id="spawn-btn" style="background: transparent; border: 0; padding: 0; color: var(--blue); font-weight: 700; cursor: pointer;">+ ticket</button>
+      </span>
+    </div>
+  </header>
+
+  <main>
+    <section class="lane queue">
+      <h2>
+        <span class="dot"></span>
+        Queued
+        <span class="count" id="queue-count">0</span>
+      </h2>
+      <div class="tickets" id="queue"></div>
+    </section>
+
+    <section class="lane active">
+      <h2>
+        <span class="dot"></span>
+        Active
+        <span class="count" id="active-count">0</span>
+      </h2>
+      <div class="detail-panel empty" id="detail">
+        Click a ticket to see its lifecycle
+      </div>
+      <div class="tickets" id="active"></div>
+    </section>
+
+    <section class="lane done">
+      <h2>
+        <span class="dot"></span>
+        Done (last hour)
+        <span class="count" id="done-count">0</span>
+      </h2>
+      <div class="tickets" id="done"></div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="metric">
+      <div class="metric-label">Outbox Queue</div>
+      <div class="metric-value"><span id="outbox-depth">0</span><span class="metric-unit">pending</span></div>
+      <svg class="sparkline" viewBox="0 0 100 20" preserveAspectRatio="none" id="outbox-sparkline">
+        <polyline points=""/>
+      </svg>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Heartbeat</div>
+      <div class="metric-value">
+        <span class="heartbeat-led"><span class="dot"></span> alive</span>
+      </div>
+      <div style="font-size: 11px; color: var(--text-mute); margin-top: 4px;" id="hb-rate">5.2s avg</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Watchdog</div>
+      <div class="metric-value"><span id="watchdog">3:00</span></div>
+      <div class="watchdog-bar"><div class="watchdog-bar-fill" id="watchdog-fill"></div></div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Burn Rate</div>
+      <div class="metric-value"><span id="burn-rate">0</span><span class="metric-unit">/hr</span></div>
+      <svg class="sparkline" viewBox="0 0 100 20" preserveAspectRatio="none" id="burn-sparkline">
+        <polyline points=""/>
+      </svg>
+    </div>
+  </footer>
+
+  <script>
+    // ========== State ==========
+    const state = {
+      running: true,
+      speed: 1,
+      nextTicketId: 100,
+      nextFencingToken: 1000,
+      queue: [],
+      active: [],
+      done: [],
+      outbox: [],
+      watchdogCountdown: 180, // 3 min
+      burnHistory: [],
+      outboxHistory: [],
+      heartbeatCount: 0,
+      heartbeatInterval: 1500, // ms
+      lastHeartbeatAt: Date.now(),
+      burnHistoryByMinute: [], // [{minute, count}]
+      selectedTicketId: null,
+    };
+
+    const SAMPLE_TICKETS = [
+      { title: 'Add multi-tenant FK to users table', priority: 'P0' },
+      { title: 'Implement lease heartbeat', priority: 'P0' },
+      { title: 'Postgres RLS policy for audit_outbox', priority: 'P1' },
+      { title: 'Cache invalidation on tenant update', priority: 'P1' },
+      { title: 'Refactor burn_queue error handling', priority: 'P2' },
+      { title: 'Add /orch-status slash command', priority: 'P2' },
+      { title: 'Document the dependency audit gate', priority: 'P3' },
+      { title: 'Fix race in outbox consumer', priority: 'P0' },
+      { title: 'Add metrics for verifier pass-rate', priority: 'P3' },
+      { title: 'Optimize N+1 in tickets-index', priority: 'P2' },
+      { title: 'External validation report template', priority: 'P1' },
+      { title: 'Bundle translator: FHIR → internal', priority: 'P0' },
+    ];
+
+    const HOLDER_NAMES = ['agent-α', 'agent-β', 'agent-γ', 'agent-δ'];
+    const VERIFIER_LENSES = ['correctness', 'per_tenant', 'failure_modes', 'security', 'performance', 'reversibility'];
+
+    // ========== Utilities ==========
+    const sleep = ms => new Promise(r => setTimeout(r, ms / state.speed));
+    const rand = (min, max) => Math.random() * (max - min) + min;
+    const randInt = (min, max) => Math.floor(rand(min, max + 1));
+    const formatTime = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+
+    // ========== Ticket generation ==========
+    function generateTicket() {
+      const sample = SAMPLE_TICKETS[randInt(0, SAMPLE_TICKETS.length - 1)];
+      const id = `TKT-${sample.priority}-${state.nextTicketId++}`;
+      return {
+        id,
+        title: sample.title,
+        priority: sample.priority,
+        status: 'QUEUED',
+        holder: null,
+        fencingToken: null,
+        retries: 0,
+        verifiers: VERIFIER_LENSES.slice(0, 3).map(lens => ({ lens, vote: null, evidence: '' })),
+        startedAt: null,
+        completedAt: null,
+        outboxCascade: [
+          'frontmatter:done',
+          'tickets-index:row',
+          'progress-log:entry',
+          'state-md:counts',
+          'commit:final',
+        ],
+        cascadeApplied: 0,
+        failureReason: null,
+      };
+    }
+
+    function addTicket() {
+      const t = generateTicket();
+      state.queue.push(t);
+      render();
+    }
+
+    // ========== Lifecycle ==========
+    async function runLifecycle(ticket) {
+      try {
+        // CLAIM
+        ticket.status = 'CLAIMED';
+        ticket.holder = HOLDER_NAMES[randInt(0, HOLDER_NAMES.length - 1)];
+        ticket.fencingToken = state.nextFencingToken++;
+        ticket.startedAt = Date.now();
+        moveToActive(ticket);
+        render();
+        await sleep(rand(800, 1500));
+
+        // EXECUTE
+        ticket.status = 'EXECUTING';
+        render();
+        await sleep(rand(3000, 5000));
+
+        // VERIFY (3-6 lenses in parallel)
+        ticket.status = 'VERIFYING';
+        render();
+        await Promise.all(ticket.verifiers.map(async v => {
+          await sleep(rand(800, 2200));
+          const willFail = Math.random() < 0.15; // 15% fail rate
+          v.vote = willFail ? 'FAIL' : 'PASS';
+          v.evidence = willFail
+            ? `src/foo.py:${randInt(40, 200)}: missing edge case`
+            : `src/foo.py:${randInt(40, 200)}: AC verified`;
+        }));
+
+        // Check votes
+        const failed = ticket.verifiers.some(v => v.vote === 'FAIL');
+        if (failed) {
+          ticket.retries++;
+          ticket.failureReason = ticket.verifiers.find(v => v.vote === 'FAIL').evidence;
+          if (ticket.retries < 3) {
+            // Re-implement
+            await sleep(rand(1500, 2500));
+            ticket.status = 'EXECUTING';
+            render();
+            await sleep(rand(2000, 3000));
+            // Re-verify
+            ticket.status = 'VERIFYING';
+            render();
+            await Promise.all(ticket.verifiers.map(async v => {
+              await sleep(rand(500, 1500));
+              v.vote = 'PASS'; // 2nd pass usually succeeds
+              v.evidence = `src/foo.py:${randInt(40, 200)}: AC verified (retry ${ticket.retries})`;
+            }));
+          } else {
+            // Retry cap exceeded — PARTIAL
+            ticket.status = 'PARTIAL';
+            ticket.failureReason = 'Retry cap exceeded (3) — see follow-up tickets';
+            moveToDone(ticket);
+            render();
+            return;
+          }
+        }
+
+        // Outbox cascade
+        for (let i = 0; i < ticket.outboxCascade.length; i++) {
+          const key = `${ticket.id}:${ticket.outboxCascade[i]}`;
+          state.outbox.push({ key, ticket: ticket.id, applied: false, ts: Date.now() });
+          render();
+          await sleep(rand(150, 350));
+          state.outbox.find(o => o.key === key).applied = true;
+          ticket.cascadeApplied++;
+          render();
+        }
+
+        // DONE
+        ticket.status = 'DONE';
+        ticket.completedAt = Date.now();
+        moveToDone(ticket);
+        recordBurn();
+        render();
+      } catch (e) {
+        console.error('lifecycle error', e);
+      }
+    }
+
+    function moveToActive(ticket) {
+      const idx = state.queue.indexOf(ticket);
+      if (idx > -1) state.queue.splice(idx, 1);
+      state.active.push(ticket);
+    }
+
+    function moveToDone(ticket) {
+      const idx = state.active.indexOf(ticket);
+      if (idx > -1) state.active.splice(idx, 1);
+      state.done.unshift(ticket);
+      // Trim done to last hour (very rough)
+      if (state.done.length > 30) state.done.pop();
+    }
+
+    function recordBurn() {
+      const now = Date.now();
+      state.burnHistory.push(now);
+      // Trim to last hour
+      state.burnHistory = state.burnHistory.filter(t => now - t < 3600000);
+    }
+
+    // ========== Auto-spawn ==========
+    async function autoSpawn() {
+      while (state.running) {
+        await sleep(rand(4000, 8000));
+        if (state.queue.length < 6 && state.active.length < 4) {
+          addTicket();
+        }
+      }
+    }
+
+    // ========== Heartbeat / watchdog ==========
+    async function heartbeatTick() {
+      while (state.running) {
+        await sleep(state.heartbeatInterval);
+        state.heartbeatCount++;
+        state.lastHeartbeatAt = Date.now();
+      }
+    }
+
+    async function watchdogCountdown() {
+      while (state.running) {
+        await sleep(1000);
+        state.watchdogCountdown--;
+        if (state.watchdogCountdown <= 0) state.watchdogCountdown = 180;
+      }
+    }
+
+    // ========== Outbox consumer ==========
+    async function outboxConsumer() {
+      while (state.running) {
+        await sleep(rand(200, 500));
+        // Apply oldest pending
+        const pending = state.outbox.find(o => !o.applied);
+        if (pending) {
+          await sleep(rand(50, 150));
+          pending.applied = true;
+        }
+        // Trim outbox to last 50
+        if (state.outbox.length > 50) state.outbox.shift();
+      }
+    }
+
+    // ========== Worker pool (max 4 parallel) ==========
+    async function workerPool() {
+      while (state.running) {
+        if (state.active.length < 4 && state.queue.length > 0) {
+          const ticket = state.queue[0];
+          runLifecycle(ticket); // fire and forget
+        }
+        await sleep(300);
+      }
+    }
+
+    // ========== Render ==========
+    function render() {
+      // Counts
+      document.getElementById('queue-count').textContent = state.queue.length;
+      document.getElementById('active-count').textContent = state.active.length;
+      document.getElementById('done-count').textContent = state.done.length;
+
+      // Lanes
+      renderLane('queue', state.queue);
+      renderLane('active', state.active);
+      renderLane('done', state.done);
+
+      // Metrics
+      const outboxPending = state.outbox.filter(o => !o.applied).length;
+      document.getElementById('outbox-depth').textContent = outboxPending;
+      document.getElementById('watchdog').textContent = formatTime(state.watchdogCountdown);
+      const pct = (state.watchdogCountdown / 180) * 100;
+      document.getElementById('watchdog-fill').style.width = pct + '%';
+      document.getElementById('burn-rate').textContent = state.burnHistory.length;
+
+      // Sparklines
+      renderSparkline('outbox-sparkline', state.outboxHistory, outboxPending);
+      state.outboxHistory.push(outboxPending);
+      if (state.outboxHistory.length > 30) state.outboxHistory.shift();
+
+      renderSparkline('burn-sparkline', state.burnHistoryByMinute, state.burnHistory.length);
+      state.burnHistoryByMinute.push(state.burnHistory.length);
+      if (state.burnHistoryByMinute.length > 30) state.burnHistoryByMinute.shift();
+
+      // Detail panel
+      renderDetail();
+    }
+
+    function renderLane(laneId, tickets) {
+      const container = document.getElementById(laneId);
+      container.innerHTML = '';
+      tickets.slice(0, 10).forEach(t => {
+        const card = document.createElement('div');
+        card.className = `ticket ${t.status.toLowerCase()}`;
+        card.onclick = () => { state.selectedTicketId = t.id; render(); };
+
+        const verifiersHtml = (t.status === 'VERIFYING' || t.status === 'DONE' || t.status === 'PARTIAL')
+          ? `<div class="verifier-row">
+              ${t.verifiers.map(v => `<div class="verifier ${v.vote ? v.vote.toLowerCase() : 'pending'}" title="${v.lens}: ${v.vote || 'pending'}"></div>`).join('')}
+            </div>`
+          : '';
+
+        card.innerHTML = `
+          <div class="ticket-id">${t.id}</div>
+          <div class="ticket-title">${t.title}</div>
+          <div class="ticket-meta">
+            <span class="pill priority">${t.priority}</span>
+            ${t.holder ? `<span class="pill holder">${t.holder}</span>` : ''}
+            ${t.fencingToken ? `<span class="pill token">tok=${t.fencingToken}</span>` : ''}
+            ${t.retries > 0 ? `<span class="pill retries">↻ ${t.retries}</span>` : ''}
+          </div>
+          ${verifiersHtml}
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function renderDetail() {
+      const panel = document.getElementById('detail');
+      const ticket = state.active.find(t => t.id === state.selectedTicketId)
+        || state.done.find(t => t.id === state.selectedTicketId)
+        || state.queue.find(t => t.id === state.selectedTicketId);
+
+      if (!ticket) {
+        panel.className = 'detail-panel empty';
+        panel.innerHTML = 'Click a ticket to see its lifecycle';
+        return;
+      }
+
+      panel.className = 'detail-panel';
+      const steps = [
+        { label: 'Claimed by ' + (ticket.holder || '?'), status: ticket.status !== 'QUEUED' ? 'done' : '' },
+        { label: 'Executing (write-files-first, heartbeat)', status: ['EXECUTING', 'VERIFYING', 'DONE', 'PARTIAL'].includes(ticket.status) ? 'done' : (ticket.status === 'CLAIMED' ? 'active' : '') },
+        { label: 'Verifying (3-6 lenses in parallel)', status: ['VERIFYING', 'DONE', 'PARTIAL'].includes(ticket.status) ? 'active' : '' },
+        { label: 'Cascade via outbox', status: ticket.cascadeApplied > 0 ? 'active' : '' },
+        { label: 'Done', status: ticket.status === 'DONE' ? 'done' : '' },
+      ];
+
+      const cascadeHtml = ticket.cascadeApplied > 0 ? `
+        <div class="cascade">
+          <div style="font-size: 11px; color: var(--text-mute); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Outbox cascade</div>
+          ${ticket.outboxCascade.map((step, i) => `
+            <div class="cascade-step ${i < ticket.cascadeApplied ? 'applied' : ''}">${step}</div>
+          `).join('')}
+        </div>
+      ` : '';
+
+      const verifiersHtml = ticket.verifiers.length > 0 ? `
+        <div style="margin-top: 8px;">
+          <div style="font-size: 11px; color: var(--text-mute); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Verifier votes</div>
+          ${ticket.verifiers.map(v => `
+            <div class="lifecycle-step ${v.vote === 'PASS' ? 'done' : v.vote === 'FAIL' ? '' : 'active'}">
+              <span class="check">${v.vote === 'PASS' ? '✓' : v.vote === 'FAIL' ? '✗' : '⋯'}</span>
+              <span style="flex: 1;"><strong>${v.lens}</strong>: ${v.vote || 'pending'}</span>
+            </div>
+          `).join('')}
+        </div>
+      ` : '';
+
+      const failureHtml = ticket.failureReason ? `
+        <div style="margin-top: 8px; padding: 8px; background: rgba(239, 68, 68, 0.1); border-radius: 6px; border-left: 3px solid var(--red); font-size: 12px;">
+          ⚠️ ${ticket.failureReason}
+        </div>
+      ` : '';
+
+      panel.innerHTML = `
+        <h3>${ticket.id} — ${ticket.title}</h3>
+        <div style="font-size: 12px; color: var(--text-dim);">
+          ${steps.map(s => `
+            <div class="lifecycle-step ${s.status}">
+              <span class="check">${s.status === 'done' ? '✓' : s.status === 'active' ? '⋯' : '○'}</span>
+              <span>${s.label}</span>
+            </div>
+          `).join('')}
+        </div>
+        ${cascadeHtml}
+        ${verifiersHtml}
+        ${failureHtml}
+      `;
+    }
+
+    function renderSparkline(id, history, current) {
+      const svg = document.getElementById(id);
+      const data = [...history, current];
+      if (data.length < 2) return;
+      const max = Math.max(...data, 1);
+      const points = data.map((v, i) => `${(i / (data.length - 1)) * 100},${20 - (v / max) * 18}`).join(' ');
+      svg.querySelector('polyline').setAttribute('points', points);
+    }
+
+    // ========== Render loop ==========
+    setInterval(render, 500);
+
+    // ========== Controls ==========
+    document.getElementById('play').onclick = () => {
+      state.running = !state.running;
+      const btn = document.getElementById('play');
+      btn.textContent = state.running ? '⏸ Pause' : '▶ Play';
+      btn.classList.toggle('primary', state.running);
+      if (state.running) {
+        autoSpawn();
+        heartbeatTick();
+        watchdogCountdown();
+        outboxConsumer();
+        workerPool();
+      }
+    };
+
+    document.getElementById('reset').onclick = () => {
+      state.queue = [];
+      state.active = [];
+      state.done = [];
+      state.outbox = [];
+      state.watchdogCountdown = 180;
+      state.burnHistory = [];
+      state.outboxHistory = [];
+      state.nextTicketId = 100;
+      state.nextFencingToken = 1000;
+      state.selectedTicketId = null;
+      // Re-seed with 3 tickets
+      for (let i = 0; i < 3; i++) addTicket();
+      render();
+    };
+
+    const speedLevels = [0.5, 1, 2, 5, 10];
+    let speedIdx = 1;
+    document.getElementById('speed-btn').onclick = () => {
+      speedIdx = (speedIdx + 1) % speedLevels.length;
+      state.speed = speedLevels[speedIdx];
+      document.getElementById('speed-btn').textContent = state.speed + 'x';
+    };
+
+    document.getElementById('spawn-btn').onclick = addTicket;
+
+    // ========== Init ==========
+    for (let i = 0; i < 3; i++) addTicket();
+    render();
+    autoSpawn();
+    heartbeatTick();
+    watchdogCountdown();
+    outboxConsumer();
+    workerPool();
+  </script>
+</body>
+</html>
