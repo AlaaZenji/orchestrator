@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 280" width="480" height="280" role="img" aria-label="Self-Improvement animation">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0a0e27"/><stop offset="100%" stop-color="#1e1b4b"/>
+    </linearGradient>
+  </defs>
+  <rect width="480" height="280" fill="url(#bg)"/>
+  <rect x="20" y="20" width="440" height="240" rx="10" fill="#0f172a" stroke="#334155"/>
+
+  <text x="36" y="46" font-family="-apple-system, system-ui, sans-serif" font-size="10" font-weight="700" fill="#64748b" letter-spacing="1.5">13. SELF-IMPROVEMENT</text>
+  <text x="36" y="68" font-family="-apple-system, system-ui, sans-serif" font-size="14" fill="#f8fafc" font-weight="600">orchestrator audits itself</text>
+
+  <!-- Self-referential loop -->
+  <g transform="translate(240, 168)">
+    <!-- Outer circle (the loop) -->
+    <circle cx="0" cy="0" r="80" fill="none" stroke="#22c55e" stroke-width="1" stroke-dasharray="6 4">
+      <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="6s" repeatCount="indefinite"/>
+    </circle>
+
+    <!-- Inner node: orchestrator -->
+    <circle cx="0" cy="0" r="24" fill="#020617" stroke="#22c55e" stroke-width="1.5"/>
+    <text x="0" y="-2" font-family="monospace" font-size="9" fill="#22c55e" text-anchor="middle">ORCH-</text>
+    <text x="0" y="10" font-family="monospace" font-size="9" fill="#22c55e" text-anchor="middle">ESTR</text>
+
+    <!-- 3 nodes around the loop -->
+    <!-- Top: audit -->
+    <g transform="translate(0, -70)">
+      <rect width="64" height="22" rx="4" fill="#1e293b" stroke="#a855f7" stroke-width="1"/>
+      <text x="32" y="14" font-family="monospace" font-size="9" fill="#a855f7" text-anchor="middle">audit</text>
+    </g>
+    <!-- Bottom-left: orch-self ticket -->
+    <g transform="translate(-58, 48)">
+      <rect width="76" height="22" rx="4" fill="#1e293b" stroke="#f59e0b" stroke-width="1"/>
+      <text x="38" y="14" font-family="monospace" font-size="9" fill="#f59e0b" text-anchor="middle">orch-self</text>
+    </g>
+    <!-- Bottom-right: improve -->
+    <g transform="translate(40, 48)">
+      <rect width="56" height="22" rx="4" fill="#1e293b" stroke="#3b82f6" stroke-width="1"/>
+      <text x="28" y="14" font-family="monospace" font-size="9" fill="#3b82f6" text-anchor="middle">improve</text>
+    </g>
+
+    <!-- Arrows between nodes -->
+    <path d="M 0 -48 L 0 -32" stroke="#a855f7" stroke-width="1" fill="none">
+      <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.2;0.7;1" dur="3s" repeatCount="indefinite"/>
+    </path>
+    <text x="6" y="-42" font-family="monospace" font-size="8" fill="#a855f7">→</text>
+
+    <path d="M -38 48 L -22 38" stroke="#f59e0b" stroke-width="1" fill="none">
+      <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.4;0.9;1" dur="3s" repeatCount="indefinite"/>
+    </path>
+    <text x="-30" y="44" font-family="monospace" font-size="8" fill="#f59e0b">→</text>
+
+    <path d="M 40 48 L 24 38" stroke="#3b82f6" stroke-width="1" fill="none">
+      <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.6;0.9;1" dur="3s" repeatCount="indefinite"/>
+    </path>
+    <text x="32" y="44" font-family="monospace" font-size="8" fill="#3b82f6">→</text>
+  </g>
+
+  <!-- Annotation -->
+  <g transform="translate(36, 232)">
+    <text x="0" y="0" font-family="monospace" font-size="10" fill="#22c55e">∞ dogfooding its own discipline</text>
+  </g>
+
+  <text x="36" y="252" font-family="monospace" font-size="10" fill="#94a3b8">every fix ships through the same loop</text>
+</svg>

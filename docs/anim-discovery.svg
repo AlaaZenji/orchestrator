@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 280" width="480" height="280" role="img" aria-label="Discovery animation">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0a0e27"/><stop offset="100%" stop-color="#1e1b4b"/>
+    </linearGradient>
+  </defs>
+  <rect width="480" height="280" fill="url(#bg)"/>
+  <rect x="20" y="20" width="440" height="240" rx="10" fill="#0f172a" stroke="#334155"/>
+
+  <text x="36" y="46" font-family="-apple-system, system-ui, sans-serif" font-size="10" font-weight="700" fill="#64748b" letter-spacing="1.5">1. DISCOVERY</text>
+  <text x="36" y="68" font-family="-apple-system, system-ui, sans-serif" font-size="14" fill="#f8fafc" font-weight="600">scans code for opportunities</text>
+
+  <!-- Code surface with TODO markers -->
+  <g transform="translate(36, 90)">
+    <rect width="200" height="140" rx="6" fill="#020617" stroke="#1e293b"/>
+    <text x="10" y="18" font-family="monospace" font-size="10" fill="#64748b">src/lease.py</text>
+    <text x="10" y="36" font-family="monospace" font-size="10" fill="#94a3b8">  <tspan fill="#475569">def</tspan> claim(ticket):</text>
+    <text x="10" y="52" font-family="monospace" font-size="10" fill="#94a3b8">    <tspan fill="#f59e0b"># TODO</tspan>: validate tenant</text>
+    <text x="10" y="68" font-family="monospace" font-size="10" fill="#94a3b8">    <tspan fill="#f59e0b"># FIXME</tspan>: race condition</text>
+    <text x="10" y="92" font-family="monospace" font-size="10" fill="#94a3b8">  <tspan fill="#475569">def</tspan> heartbeat():</text>
+    <text x="10" y="108" font-family="monospace" font-size="10" fill="#94a3b8">    <tspan fill="#f59e0b"># XXX</tspan>: edge case</text>
+    <text x="10" y="124" font-family="monospace" font-size="10" fill="#94a3b8">    <tspan fill="#475569">return</tspan> token</text>
+
+    <!-- Scanning line -->
+    <line x1="0" y1="0" x2="200" y2="0" stroke="#3b82f6" stroke-width="2" opacity="0.8">
+      <animate attributeName="y1" values="0;140;0" dur="3s" repeatCount="indefinite"/>
+      <animate attributeName="y2" values="0;140;0" dur="3s" repeatCount="indefinite"/>
+    </line>
+  </g>
+
+  <!-- Arrow + opportunities -->
+  <g transform="translate(252, 90)">
+    <text x="0" y="14" font-family="monospace" font-size="9" fill="#64748b">FOUND</text>
+    <!-- OPP-101 -->
+    <g opacity="0">
+      <animate attributeName="opacity" values="0;1;1;1" keyTimes="0;0.15;0.95;1" dur="6s" repeatCount="indefinite"/>
+      <rect width="184" height="36" rx="5" fill="#1e293b" stroke="#3b82f6" stroke-width="1"/>
+      <rect width="3" height="36" rx="1.5" fill="#3b82f6"/>
+      <text x="10" y="14" font-family="monospace" font-size="9" fill="#94a3b8">OPP-101</text>
+      <text x="10" y="28" font-family="system-ui, sans-serif" font-size="10" fill="#f8fafc">validate tenant</text>
+    </g>
+    <!-- OPP-102 -->
+    <g opacity="0">
+      <animate attributeName="opacity" values="0;0;1;1;1" keyTimes="0;0.3;0.35;0.95;1" dur="6s" repeatCount="indefinite"/>
+      <rect y="44" width="184" height="36" rx="5" fill="#1e293b" stroke="#3b82f6" stroke-width="1"/>
+      <rect y="44" width="3" height="36" rx="1.5" fill="#3b82f6"/>
+      <text x="10" y="58" font-family="monospace" font-size="9" fill="#94a3b8">OPP-102</text>
+      <text x="10" y="72" font-family="system-ui, sans-serif" font-size="10" fill="#f8fafc">race condition</text>
+    </g>
+    <!-- OPP-103 -->
+    <g opacity="0">
+      <animate attributeName="opacity" values="0;0;1;1;1" keyTimes="0;0.5;0.55;0.95;1" dur="6s" repeatCount="indefinite"/>
+      <rect y="88" width="184" height="36" rx="5" fill="#1e293b" stroke="#3b82f6" stroke-width="1"/>
+      <rect y="88" width="3" height="36" rx="1.5" fill="#3b82f6"/>
+      <text x="10" y="102" font-family="monospace" font-size="9" fill="#94a3b8">OPP-103</text>
+      <text x="10" y="116" font-family="system-ui, sans-serif" font-size="10" fill="#f8fafc">edge case</text>
+    </g>
+  </g>
+
+  <!-- Connector arrow -->
+  <path d="M 240 160 L 248 160" stroke="#475569" stroke-width="1" fill="none" marker-end="url(#arr)"/>
+
+  <!-- Counter -->
+  <text x="36" y="252" font-family="monospace" font-size="10" fill="#94a3b8">FOUND TODAY</text>
+  <text x="200" y="252" font-family="monospace" font-size="14" font-weight="700" fill="#3b82f6">
+    <animate attributeName="textContent" values="0;1;2;3" keyTimes="0;0.4;0.7;0.95" dur="6s" repeatCount="indefinite"/>3
+  </text>
+</svg>

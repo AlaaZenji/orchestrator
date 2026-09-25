@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 280" width="480" height="280" role="img" aria-label="Status and Timer animation">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0a0e27"/><stop offset="100%" stop-color="#1e1b4b"/>
+    </linearGradient>
+  </defs>
+  <rect width="480" height="280" fill="url(#bg)"/>
+  <rect x="20" y="20" width="440" height="240" rx="10" fill="#0f172a" stroke="#334155"/>
+
+  <text x="36" y="46" font-family="-apple-system, system-ui, sans-serif" font-size="10" font-weight="700" fill="#64748b" letter-spacing="1.5">11. STATUS & TIMER</text>
+  <text x="36" y="68" font-family="-apple-system, system-ui, sans-serif" font-size="14" fill="#f8fafc" font-weight="600">dashboard + ETA projection</text>
+
+  <!-- 4 metric cards -->
+  <g transform="translate(36, 90)">
+    <!-- Tickets by status -->
+    <g>
+      <rect width="98" height="64" rx="6" fill="#020617" stroke="#1e293b"/>
+      <text x="10" y="18" font-family="monospace" font-size="9" fill="#64748b">TICKETS</text>
+      <text x="10" y="44" font-family="monospace" font-size="18" font-weight="700" fill="#22c55e">
+        <animate attributeName="textContent" values="42;44;46;48;50" keyTimes="0;0.25;0.5;0.75;1" dur="8s" repeatCount="indefinite"/>42
+      </text>
+      <text x="40" y="44" font-family="monospace" font-size="11" fill="#94a3b8">DONE</text>
+      <text x="10" y="58" font-family="monospace" font-size="8" fill="#64748b">14 QUEUED</text>
+    </g>
+
+    <!-- Active leases -->
+    <g transform="translate(108, 0)">
+      <rect width="98" height="64" rx="6" fill="#020617" stroke="#1e293b"/>
+      <text x="10" y="18" font-family="monospace" font-size="9" fill="#64748b">LEASES</text>
+      <text x="10" y="44" font-family="monospace" font-size="18" font-weight="700" fill="#3b82f6">
+        <animate attributeName="textContent" values="3;4;3;4;3" keyTimes="0;0.2;0.5;0.7;1" dur="8s" repeatCount="indefinite"/>3
+      </text>
+      <text x="32" y="44" font-family="monospace" font-size="11" fill="#94a3b8">active</text>
+      <text x="10" y="58" font-family="monospace" font-size="8" fill="#64748b">cap: 4</text>
+    </g>
+
+    <!-- Outbox -->
+    <g transform="translate(216, 0)">
+      <rect width="98" height="64" rx="6" fill="#020617" stroke="#1e293b"/>
+      <text x="10" y="18" font-family="monospace" font-size="9" fill="#64748b">OUTBOX</text>
+      <text x="10" y="44" font-family="monospace" font-size="18" font-weight="700" fill="#06b6d4">
+        <animate attributeName="textContent" values="0;3;5;2;0" keyTimes="0;0.25;0.5;0.75;1" dur="8s" repeatCount="indefinite"/>0
+      </text>
+      <text x="32" y="44" font-family="monospace" font-size="11" fill="#94a3b8">pending</text>
+      <text x="10" y="58" font-family="monospace" font-size="8" fill="#64748b">12/min applied</text>
+    </g>
+
+    <!-- Burn rate -->
+    <g transform="translate(324, 0)">
+      <rect width="98" height="64" rx="6" fill="#020617" stroke="#1e293b"/>
+      <text x="10" y="18" font-family="monospace" font-size="9" fill="#64748b">BURN</text>
+      <text x="10" y="44" font-family="monospace" font-size="18" font-weight="700" fill="#22c55e">
+        <animate attributeName="textContent" values="3;4;5;6;7" keyTimes="0;0.25;0.5;0.75;1" dur="8s" repeatCount="indefinite"/>3
+      </text>
+      <text x="32" y="44" font-family="monospace" font-size="11" fill="#94a3b8">/hr</text>
+      <text x="10" y="58" font-family="monospace" font-size="8" fill="#64748b">last hour</text>
+    </g>
+  </g>
+
+  <!-- ETA projection -->
+  <g transform="translate(36, 174)">
+    <text x="0" y="0" font-family="monospace" font-size="9" font-weight="700" fill="#64748b">ETA</text>
+    <text x="0" y="22" font-family="monospace" font-size="14" fill="#94a3b8">all P0 tickets done by</text>
+    <text x="180" y="22" font-family="monospace" font-size="14" font-weight="700" fill="#22c55e">Fri 18:00</text>
+    <text x="280" y="22" font-family="monospace" font-size="11" fill="#94a3b8">· 2d 4h</text>
+
+    <!-- Timeline bar showing progress -->
+    <rect x="0" y="34" width="408" height="8" rx="4" fill="#1e293b"/>
+    <rect x="0" y="34" width="0" height="8" rx="4" fill="#22c55e">
+      <animate attributeName="width" values="0;280" dur="3s" fill="freeze"/>
+    </rect>
+    <circle cx="280" cy="38" r="6" fill="#0f172a" stroke="#22c55e" stroke-width="2">
+      <animate attributeName="cx" values="0;280" dur="3s" fill="freeze"/>
+    </circle>
+  </g>
+
+  <text x="36" y="252" font-family="monospace" font-size="10" fill="#94a3b8">at-a-glance operational state</text>
+</svg>

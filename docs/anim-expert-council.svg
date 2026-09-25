@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 280" width="480" height="280" role="img" aria-label="Expert Council animation">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0a0e27"/><stop offset="100%" stop-color="#1e1b4b"/>
+    </linearGradient>
+  </defs>
+  <rect width="480" height="280" fill="url(#bg)"/>
+  <rect x="20" y="20" width="440" height="240" rx="10" fill="#0f172a" stroke="#334155"/>
+
+  <text x="36" y="46" font-family="-apple-system, system-ui, sans-serif" font-size="10" font-weight="700" fill="#64748b" letter-spacing="1.5">12. EXPERT COUNCIL</text>
+  <text x="36" y="68" font-family="-apple-system, system-ui, sans-serif" font-size="14" fill="#f8fafc" font-weight="600">route opportunity to specialists</text>
+
+  <!-- Root opportunity (left) -->
+  <g transform="translate(36, 100)">
+    <rect width="120" height="50" rx="6" fill="#020617" stroke="#3b82f6" stroke-width="1.5"/>
+    <text x="12" y="18" font-family="monospace" font-size="9" fill="#94a3b8">OPP-103</text>
+    <text x="12" y="34" font-family="system-ui, sans-serif" font-size="10" fill="#f8fafc" font-weight="600">[LEGAL WALL]</text>
+    <text x="12" y="46" font-family="monospace" font-size="8" fill="#94a3b8">in document</text>
+  </g>
+
+  <!-- Branches to specialists (right side, tree layout) -->
+  <g transform="translate(190, 92)">
+    <!-- Branch 1: Security -->
+    <g>
+      <line x1="-30" y1="22" x2="0" y2="22" stroke="#475569" stroke-width="1"/>
+      <rect width="220" height="32" rx="5" fill="#1e293b" stroke="#ef4444" stroke-width="1"/>
+      <rect width="3" height="32" rx="1.5" fill="#ef4444"/>
+      <circle cx="22" cy="16" r="6" fill="#7f1d1d"/>
+      <text x="22" y="20" font-family="monospace" font-size="9" fill="#ef4444" text-anchor="middle">!</text>
+      <text x="36" y="14" font-family="monospace" font-size="10" fill="#94a3b8">security-specialist</text>
+      <text x="36" y="26" font-family="monospace" font-size="9" fill="#ef4444">SQLi risk · flagged</text>
+    </g>
+
+    <!-- Branch 2: Regulatory -->
+    <g transform="translate(0, 40)">
+      <line x1="-30" y1="22" x2="0" y2="22" stroke="#475569" stroke-width="1"/>
+      <rect width="220" height="32" rx="5" fill="#1e293b" stroke="#a855f7" stroke-width="1"/>
+      <rect width="3" height="32" rx="1.5" fill="#a855f7"/>
+      <circle cx="22" cy="16" r="6" fill="#a855f7">
+        <animate attributeName="opacity" values="0.3;1;0.3" dur="2s" repeatCount="indefinite"/>
+      </circle>
+      <text x="22" y="20" font-family="monospace" font-size="9" fill="#a855f7" text-anchor="middle">✓</text>
+      <text x="36" y="14" font-family="monospace" font-size="10" fill="#94a3b8">regulatory-specialist</text>
+      <text x="36" y="26" font-family="monospace" font-size="9" fill="#a855f7">compliance reviewed</text>
+    </g>
+
+    <!-- Branch 3: Domain expert -->
+    <g transform="translate(0, 80)">
+      <line x1="-30" y1="22" x2="0" y2="22" stroke="#475569" stroke-width="1"/>
+      <rect width="220" height="32" rx="5" fill="#1e293b" stroke="#22c55e" stroke-width="1"/>
+      <rect width="3" height="32" rx="1.5" fill="#22c55e"/>
+      <circle cx="22" cy="16" r="6" fill="#22c55e">
+        <animate attributeName="r" values="6;8;6" dur="1s" repeatCount="indefinite"/>
+      </circle>
+      <text x="22" y="20" font-family="monospace" font-size="9" fill="#22c55e" text-anchor="middle">✓</text>
+      <text x="36" y="14" font-family="monospace" font-size="10" fill="#94a3b8">domain-specialist</text>
+      <text x="36" y="26" font-family="monospace" font-size="9" fill="#22c55e">context confirmed</text>
+    </g>
+
+    <!-- Synthesis arrow -->
+    <path d="M 224 62 L 240 62 L 240 78 L 250 78" stroke="#22c55e" stroke-width="1" fill="none"/>
+    <text x="244" y="74" font-family="monospace" font-size="9" fill="#22c55e">→</text>
+  </g>
+
+  <!-- Synthesized ticket card (bottom-right) -->
+  <g transform="translate(252, 184)" opacity="0">
+    <animate attributeName="opacity" values="0;1" dur="0.3s" begin="2s" fill="freeze"/>
+    <rect width="190" height="50" rx="6" fill="#022c1a" stroke="#22c55e" stroke-width="1.5"/>
+    <rect width="3" height="50" rx="1.5" fill="#22c55e"/>
+    <text x="12" y="16" font-family="monospace" font-size="9" fill="#94a3b8">TKT-P0-105</text>
+    <text x="12" y="32" font-family="system-ui, sans-serif" font-size="10" fill="#f8fafc" font-weight="600">3 expert reviews synthesized</text>
+    <text x="12" y="44" font-family="monospace" font-size="8" fill="#22c55e">✓ ready to file</text>
+  </g>
+
+  <text x="36" y="252" font-family="monospace" font-size="10" fill="#94a3b8">deterministic keyword + hard-rule routing</text>
+</svg>

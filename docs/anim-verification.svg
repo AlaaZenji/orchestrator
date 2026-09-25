@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 280" width="480" height="280" role="img" aria-label="Verification animation">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0a0e27"/><stop offset="100%" stop-color="#1e1b4b"/>
+    </linearGradient>
+  </defs>
+  <rect width="480" height="280" fill="url(#bg)"/>
+  <rect x="20" y="20" width="440" height="240" rx="10" fill="#0f172a" stroke="#334155"/>
+
+  <text x="36" y="46" font-family="-apple-system, system-ui, sans-serif" font-size="10" font-weight="700" fill="#64748b" letter-spacing="1.5">3. VERIFICATION</text>
+  <text x="36" y="68" font-family="-apple-system, system-ui, sans-serif" font-size="14" fill="#f8fafc" font-weight="600">3-6 lenses vote in parallel</text>
+
+  <g transform="translate(36, 90)">
+    <!-- Lens labels -->
+    <g font-family="monospace" font-size="10" fill="#64748b">
+      <text x="0" y="14">correctness</text>
+      <text x="0" y="38">per_tenant</text>
+      <text x="0" y="62">failure_modes</text>
+      <text x="0" y="86">security</text>
+      <text x="0" y="110">performance</text>
+      <text x="0" y="134">reversibility</text>
+    </g>
+
+    <!-- Verifier bars (each fills at slightly different time) -->
+    <g transform="translate(160, 6)">
+      <!-- correctness -->
+      <rect x="0" y="0" width="240" height="10" rx="5" fill="#1e293b"/>
+      <rect x="0" y="0" width="0" height="10" rx="5" fill="#22c55e">
+        <animate attributeName="width" values="0;240" dur="0.6s" begin="0.2s" fill="freeze"/>
+      </rect>
+      <text x="248" y="9" font-family="monospace" font-size="10" fill="#22c55e">✓</text>
+
+      <!-- per_tenant -->
+      <rect x="0" y="24" width="240" height="10" rx="5" fill="#1e293b"/>
+      <rect x="0" y="24" width="0" height="10" rx="5" fill="#22c55e">
+        <animate attributeName="width" values="0;240" dur="0.6s" begin="0.4s" fill="freeze"/>
+      </rect>
+      <text x="248" y="33" font-family="monospace" font-size="10" fill="#22c55e">✓</text>
+
+      <!-- failure_modes (FAIL triggers retry) -->
+      <rect x="0" y="48" width="240" height="10" rx="5" fill="#1e293b"/>
+      <rect x="0" y="48" width="0" height="10" rx="5" fill="#ef4444">
+        <animate attributeName="width" values="0;120" dur="0.4s" begin="0.6s" fill="freeze"/>
+      </rect>
+      <text x="248" y="57" font-family="monospace" font-size="10" fill="#ef4444">✗</text>
+
+      <!-- security (after retry) -->
+      <rect x="0" y="72" width="240" height="10" rx="5" fill="#1e293b"/>
+      <rect x="0" y="72" width="0" height="10" rx="5" fill="#22c55e">
+        <animate attributeName="width" values="0;240" dur="0.6s" begin="2.2s" fill="freeze"/>
+      </rect>
+      <text x="248" y="81" font-family="monospace" font-size="10" fill="#22c55e">✓</text>
+
+      <!-- performance -->
+      <rect x="0" y="96" width="240" height="10" rx="5" fill="#1e293b"/>
+      <rect x="0" y="96" width="0" height="10" rx="5" fill="#22c55e">
+        <animate attributeName="width" values="0;240" dur="0.6s" begin="2.4s" fill="freeze"/>
+      </rect>
+      <text x="248" y="105" font-family="monospace" font-size="10" fill="#22c55e">✓</text>
+
+      <!-- reversibility -->
+      <rect x="0" y="120" width="240" height="10" rx="5" fill="#1e293b"/>
+      <rect x="0" y="120" width="0" height="10" rx="5" fill="#22c55e">
+        <animate attributeName="width" values="0;240" dur="0.6s" begin="2.6s" fill="freeze"/>
+      </rect>
+      <text x="248" y="129" font-family="monospace" font-size="10" fill="#22c55e">✓</text>
+    </g>
+  </g>
+
+  <text x="36" y="252" font-family="monospace" font-size="10" fill="#94a3b8">loop-until-PASS · retry cap: 3</text>
+</svg>

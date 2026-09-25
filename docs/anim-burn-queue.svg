@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 280" width="480" height="280" role="img" aria-label="Burn Queue animation">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0a0e27"/><stop offset="100%" stop-color="#1e1b4b"/>
+    </linearGradient>
+  </defs>
+  <rect width="480" height="280" fill="url(#bg)"/>
+  <rect x="20" y="20" width="440" height="240" rx="10" fill="#0f172a" stroke="#334155"/>
+
+  <text x="36" y="46" font-family="-apple-system, system-ui, sans-serif" font-size="10" font-weight="700" fill="#64748b" letter-spacing="1.5">4. BURN QUEUE</text>
+  <text x="36" y="68" font-family="-apple-system, system-ui, sans-serif" font-size="14" fill="#f8fafc" font-weight="600">claim → execute → verify → cascade → done</text>
+
+  <!-- Lifecycle timeline -->
+  <g transform="translate(36, 100)">
+    <!-- Phase labels -->
+    <g font-family="monospace" font-size="9" fill="#64748b" text-anchor="middle">
+      <text x="40" y="0">CLAIM</text>
+      <text x="120" y="0">EXECUTE</text>
+      <text x="200" y="0">VERIFY</text>
+      <text x="280" y="0">CASCADE</text>
+      <text x="360" y="0">DONE</text>
+    </g>
+
+    <!-- Timeline bar -->
+    <line x1="20" y1="20" x2="380" y2="20" stroke="#1e293b" stroke-width="2"/>
+    <line x1="20" y1="20" x2="0" y2="20" stroke="#22c55e" stroke-width="2">
+      <animate attributeName="x2" values="20;380" dur="4s" repeatCount="indefinite" keyTimes="0;1"/>
+    </line>
+
+    <!-- Phase markers (highlight as the line passes them) -->
+    <g>
+      <circle cx="40" cy="20" r="6" fill="#0f172a" stroke="#3b82f6" stroke-width="2">
+        <animate attributeName="fill" values="#0f172a;#3b82f6;#3b82f6;#0f172a" keyTimes="0;0.05;0.2;0.21" dur="4s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="120" cy="20" r="6" fill="#0f172a" stroke="#f59e0b" stroke-width="2">
+        <animate attributeName="fill" values="#0f172a;#f59e0b;#f59e0b;#0f172a" keyTimes="0;0.25;0.4;0.41" dur="4s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="200" cy="20" r="6" fill="#0f172a" stroke="#06b6d4" stroke-width="2">
+        <animate attributeName="fill" values="#0f172a;#06b6d4;#06b6d4;#0f172a" keyTimes="0;0.5;0.65;0.66" dur="4s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="280" cy="20" r="6" fill="#0f172a" stroke="#a855f7" stroke-width="2">
+        <animate attributeName="fill" values="#0f172a;#a855f7;#a855f7;#0f172a" keyTimes="0;0.7;0.85;0.86" dur="4s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="360" cy="20" r="6" fill="#0f172a" stroke="#22c55e" stroke-width="2">
+        <animate attributeName="fill" values="#0f172a;#22c55e;#22c55e" keyTimes="0;0.9;1" dur="4s" repeatCount="indefinite"/>
+      </circle>
+    </g>
+
+    <!-- Status text under each phase -->
+    <g font-family="monospace" font-size="9" fill="#94a3b8" text-anchor="middle">
+      <text x="40" y="50">tok=1042</text>
+      <text x="120" y="50">heartbeat</text>
+      <text x="200" y="50">3 lenses</text>
+      <text x="280" y="50">5 actions</text>
+      <text x="360" y="50">SHIPPED</text>
+    </g>
+
+    <!-- Heartbeat indicator (pulses during execute phase) -->
+    <g transform="translate(120, 68)">
+      <circle cx="0" cy="0" r="3" fill="#22c55e">
+        <animate attributeName="r" values="3;5;3" dur="1s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="1;0.5;1" dur="1s" repeatCount="indefinite"/>
+      </circle>
+      <text x="10" y="4" font-family="monospace" font-size="8" fill="#22c55e">●</text>
+    </g>
+  </g>
+
+  <text x="36" y="252" font-family="monospace" font-size="10" fill="#94a3b8">WRITE-FILES-FIRST · heartbeat · anti-stall</text>
+</svg>

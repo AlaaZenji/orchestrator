@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 280" width="480" height="280" role="img" aria-label="ADR Audit animation">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0a0e27"/><stop offset="100%" stop-color="#1e1b4b"/>
+    </linearGradient>
+  </defs>
+  <rect width="480" height="280" fill="url(#bg)"/>
+  <rect x="20" y="20" width="440" height="240" rx="10" fill="#0f172a" stroke="#334155"/>
+
+  <text x="36" y="46" font-family="-apple-system, system-ui, sans-serif" font-size="10" font-weight="700" fill="#64748b" letter-spacing="1.5">6. ADR AUDIT</text>
+  <text x="36" y="68" font-family="-apple-system, system-ui, sans-serif" font-size="14" fill="#f8fafc" font-weight="600">verify each claim is observed</text>
+
+  <!-- Counter -->
+  <g transform="translate(36, 86)">
+    <text x="0" y="0" font-family="monospace" font-size="9" fill="#64748b">CLAIMS</text>
+    <text x="0" y="22" font-family="monospace" font-size="22" font-weight="700" fill="#a855f7">
+      <animate attributeName="textContent" values="0;14;14" keyTimes="0;0.7;1" dur="5s" repeatCount="indefinite"/>14
+    </text>
+    <text x="36" y="22" font-family="monospace" font-size="11" fill="#94a3b8">/ 17 observed</text>
+
+    <!-- Progress bar -->
+    <rect x="0" y="32" width="408" height="6" rx="3" fill="#1e293b"/>
+    <rect x="0" y="32" width="0" height="6" rx="3" fill="#a855f7">
+      <animate attributeName="width" values="0;336" dur="2s" fill="freeze"/>
+    </rect>
+  </g>
+
+  <!-- List of ADRs with check/X icons -->
+  <g transform="translate(36, 138)" font-family="monospace" font-size="10">
+    <!-- Verified -->
+    <g opacity="0">
+      <animate attributeName="opacity" values="0;1" dur="0.2s" begin="0.2s" fill="freeze"/>
+      <text x="0" y="0" fill="#22c55e">✓</text>
+      <text x="20" y="0" fill="#94a3b8">ADR-0001 multi-tenancy</text>
+    </g>
+    <g opacity="0">
+      <animate attributeName="opacity" values="0;1" dur="0.2s" begin="0.3s" fill="freeze"/>
+      <text x="0" y="16" fill="#22c55e">✓</text>
+      <text x="20" y="16" fill="#94a3b8">ADR-0008 RLS forced</text>
+    </g>
+    <g opacity="0">
+      <animate attributeName="opacity" values="0;1" dur="0.2s" begin="0.4s" fill="freeze"/>
+      <text x="0" y="32" fill="#22c55e">✓</text>
+      <text x="20" y="32" fill="#94a3b8">ADR-0014 offline-first</text>
+    </g>
+    <g opacity="0">
+      <animate attributeName="opacity" values="0;1" dur="0.2s" begin="0.5s" fill="freeze"/>
+      <text x="0" y="48" fill="#22c55e">✓</text>
+      <text x="20" y="48" fill="#94a3b8">ADR-0017 v2 first-class</text>
+    </g>
+
+    <!-- Unverified -->
+    <g opacity="0">
+      <animate attributeName="opacity" values="0;1" dur="0.2s" begin="0.6s" fill="freeze"/>
+      <text x="0" y="68" fill="#ef4444">✗</text>
+      <text x="20" y="68" fill="#ef4444">ADR-0022 not in code</text>
+    </g>
+    <g opacity="0">
+      <animate attributeName="opacity" values="0;1" dur="0.2s" begin="0.7s" fill="freeze"/>
+      <text x="0" y="84" fill="#ef4444">✗</text>
+      <text x="20" y="84" fill="#ef4444">ADR-0028 missing evidence</text>
+    </g>
+    <g opacity="0">
+      <animate attributeName="opacity" values="0;1" dur="0.2s" begin="0.8s" fill="freeze"/>
+      <text x="0" y="100" fill="#ef4444">✗</text>
+      <text x="20" y="100" fill="#ef4444">ADR-0031 not yet verified</text>
+    </g>
+  </g>
+
+  <text x="36" y="252" font-family="monospace" font-size="10" fill="#94a3b8">3 unverified → orch-self tickets filed</text>
+</svg>
