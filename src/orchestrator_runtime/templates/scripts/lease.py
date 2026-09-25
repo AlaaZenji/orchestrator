@@ -47,7 +47,7 @@ Public API (the four operations every caller needs):
       the count of rows deleted. Safe to run on a cron; idempotent.
 
 The module sets the ``app.current_tenant`` GUC on every connection
-BEFORE any query (per ADR-0008 + ``db/policies/tenant-rls.sql``). The
+BEFORE any query (per the project's decision records + ``the project's tenant-isolation config``). The
 RLS policy on ``orchestrator.lease`` uses the canonical NULLIF form
 (``tenant_id = NULLIF(current_setting('app.current_tenant', true),
 '')::uuid``) — the GUC MUST be set in the same transaction as the
@@ -56,10 +56,10 @@ query, otherwise the policy returns zero rows. The module uses
 across connection-pool checkouts.
 
 Stdlib only — uses :mod:`psycopg` 3.x which the project's Justfile
-already pins (``docs/04-engineering/coding-standards.md`` + the
+already pins (``the project's coding-standards doc`` + the
 ``psycopg[binary]`` driver already imported by ``tools/demo/``). All
 DB I/O happens via the existing ``orchestrator_app`` least-privileged role
-(per ADR-0008 — ``orchestrator`` is superuser with BYPASSRLS, which would
+(per the project's decision records — ``orchestrator`` is superuser with BYPASSRLS, which would
 defeat RLS testing).
 
 Synthetic test data only (CLAUDE.md #3): no real tenant IDs, no real
@@ -84,7 +84,7 @@ Environment:
 
     ``ASTRA_DB_ROLE``  — Postgres role to connect as. Defaults to
                         ``orchestrator_app`` (the least-privileged role per
-                        ADR-0008). Set to ``orchestrator`` only for ops
+                        the project's decision records). Set to ``orchestrator`` only for ops
                         recovery; the module's RLS tests assume
                         ``orchestrator_app``.
 """
@@ -112,13 +112,13 @@ psycopg = None  # type: ignore[assignment]  # populated on first DB-touching cal
 _DEFAULT_DSN: Final[str] = "postgresql://orchestrator@localhost:${ORCHESTRATOR_DB_PORT:-5432}/orchestrator"
 
 #: Default Postgres role. The least-privileged ``orchestrator_app`` role per
-#: ADR-0008 — every code path that touches clinical/audit/orchestrator
+#: the project's decision records — every code path that touches domain-specific/audit/orchestrator
 #: tables MUST be exercised as ``orchestrator_app``, never as ``orchestrator``
 #: (which is superuser with BYPASSRLS, defeating RLS testing).
 _DEFAULT_DB_ROLE: Final[str] = "orchestrator_app"
 
 #: Default role password. Matches the local dev password set in
-#: ``tools/scripts/init_app_role.sh`` (``orchestrator_app_dev``). CI sets
+#: ``tools/scripts/the project's init-app-role recipe.sh`` (``orchestrator_app_dev``). CI sets
 #: ``ASTRA_APP_PGPASSWORD`` explicitly.
 _DEFAULT_DB_PASSWORD: Final[str] = "orchestrator_app_dev"
 
@@ -227,7 +227,7 @@ def _connect():  # pragma: no cover - thin wrapper, exercised via integration te
     ``orchestrator_app`` directly — psycopg authenticates once, the session
     is in the role from the start, and ``SET ROLE`` is unnecessary.
 
-    Per ADR-0008, ``orchestrator_app`` has no superuser + no BYPASSRLS, so
+    Per the project's decision records, ``orchestrator_app`` has no superuser + no BYPASSRLS, so
     RLS evaluates on every query (the test for the ``LEASED_ERROR`` /
     cross-tenant paths assumes this).
 
@@ -242,7 +242,7 @@ def _connect():  # pragma: no cover - thin wrapper, exercised via integration te
 
     base_dsn = os.environ.get("DATABASE_URL", _DEFAULT_DSN)
     role = os.environ.get("ASTRA_DB_ROLE", _DEFAULT_DB_ROLE)
-    # Local dev password matches ``init_app_role.sh``; CI sets
+    # Local dev password matches ``the project's init-app-role recipe.sh``; CI sets
     # ``ASTRA_APP_PGPASSWORD`` explicitly. The ``orchestrator`` superuser
     # DSN (no password on trust) still works because we pass
     # ``user=role, password=password`` — psycopg replaces the
@@ -611,7 +611,7 @@ def reap_stale(now: datetime | None = None) -> int:
     tenant's stale leases in one sweep. (The RLS policy still applies;
     if the connection is ``orchestrator_app``, the reaper sees only its own
     tenant's stale leases. For a global sweep, connect as ``orchestrator``
-    — see ``tools/scripts/init_app_role.sh`` for the role hierarchy.)
+    — see ``tools/scripts/the project's init-app-role recipe.sh`` for the role hierarchy.)
 
     Args:
         now: The cutoff timestamp. Defaults to ``datetime.now(UTC)``.

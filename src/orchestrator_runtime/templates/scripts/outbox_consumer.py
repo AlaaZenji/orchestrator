@@ -113,7 +113,7 @@ DEFAULT_BATCH_LIMIT: int = 100
 OUTBOX_STATS_FILENAME: str = ".outbox-stats.json"
 
 #: DSN the consumer uses when no DSN is supplied. The orchestrator's
-#: consumer process is single-tenant (the orchestrator platform), so admin
+#: consumer process is single-tenant (the project), so admin
 #: context (BYPASSRLS) is the canonical scope — the consumer reads
 #: pending rows across all tenants (defense in depth — only the
 #: orchestrator ever writes here) AND marks them applied without

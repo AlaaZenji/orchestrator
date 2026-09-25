@@ -27,7 +27,7 @@ consumer's ``mark_applied`` is naturally idempotent (a row whose
 
 Multi-tenancy
 -------------
-Per ADR-0008 every connection MUST set ``app.current_tenant`` before
+Per the project's decision records every connection MUST set ``app.current_tenant`` before
 querying per-tenant tables. ``orchestrator.outbox`` has a canonical NULLIF
 RLS policy (per ``db/migrations/V025__orchestrator_outbox.sql``), so a
 connection without the GUC returns zero rows — the canonical defense in
@@ -74,7 +74,7 @@ DEFAULT_DSN: str = os.environ.get(
 
 #: Role used for tenant-scoped queries. ``orchestrator`` (superuser, BYPASSRLS)
 #: defeats RLS testing, so every code path that touches per-tenant tables
-#: must exercise as ``orchestrator_app`` (TKT-DEVEX-001, 2026-09-18).
+#: must exercise as ``orchestrator_app`` (TKT-NNN, 2026-09-18).
 DEFAULT_APP_ROLE_DSN: str = os.environ.get(
     "ORCH_OUTBOX_DSN",
     "postgresql://orchestrator_app:orchestrator_app_dev@localhost:${ORCHESTRATOR_DB_PORT:-5432}/orchestrator",
@@ -118,7 +118,7 @@ class DuplicateEnqueueError(OutboxError):
 class TenantContextRequired(OutboxError):
     """Raised when ``app.current_tenant`` is not set before a query.
 
-    Per ADR-0008 every per-tenant query MUST set the GUC up-front. The
+    Per the project's decision records every per-tenant query MUST set the GUC up-front. The
     connection helpers in this module set it for you; calling the public
     API without a tenant context is a usage error.
     """
@@ -201,7 +201,7 @@ def tenant_connection(
 ) -> Iterator[psycopg.Connection]:
     """Open a connection with ``app.current_tenant`` set to ``tenant_id``.
 
-    Per ADR-0008 every per-tenant query MUST run on a connection with the
+    Per the project's decision records every per-tenant query MUST run on a connection with the
     GUC set, or the canonical NULLIF RLS policy silently returns zero rows
     instead of the caller's intended rows (defense in depth).
 
@@ -216,7 +216,7 @@ def tenant_connection(
     tid = str(tenant_id).strip()
     if not tid:
         raise TenantContextRequired(
-            "tenant_id is required (ADR-0008); refusing to open a "
+            "tenant_id is required (the project's decision records); refusing to open a "
             "tenant-scoped connection without one"
         )
     with _connect(dsn) as conn:
@@ -440,7 +440,7 @@ def mark_applied(
     # We default to ``DEFAULT_DSN`` (admin role, BYPASSRLS) because the
     # orchestrator's consumer process is single-tenant — there is no
     # caller-supplied tenant context to set on the connection. Future
-    # multi-orchestrator deployments (per ADR-0012) would pass an
+    # multi-orchestrator deployments (per the project's decision records) would pass an
     # explicit ``dsn`` that has already had ``app.current_tenant`` set.
     with _connect(dsn or DEFAULT_DSN) as conn:
         with conn.cursor() as cur:

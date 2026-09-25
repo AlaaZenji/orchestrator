@@ -1,6 +1,6 @@
 """Verdict-conflict resolution — TKT-NNN (2026-09-22).
 
-**Purpose.** Per Wave 2.5 doctrine (TKT-DOCTRINE-001, 2026-09-19), the
+**Purpose.** Per the verification cadence doctrine (TKT-DOCTRINE-001, 2026-09-19), the
 orchestrator loops a ticket until all dispatched verifier lenses PASS,
 capped at 3 retries — then §Step 7 trigger #4 fires. Layer 29-30 evidence
 (TKT-NNNb, TKT-NNNb-FOUND-003) shows that pattern is **wrong** when
@@ -108,7 +108,7 @@ REJ_INVALID_FOLLOW_UP_TICKET_ID = "INVALID_FOLLOW_UP_TICKET_ID"
 #   - `TKT-NNNb`                      (R1 retry — letter suffix)
 #   - `TKT-NNNb-FOUND-001`            (follow-up ticket from P2-001b)
 #   - `TKT-PERF-001b-sub-LRU`            (follow-up with descriptive slug)
-#   - `TKT-NNN-R1-hl7-simulator-retry` (R1 retry with descriptive slug)
+#   - `TKT-NNN-R1-retry-with-descriptive-slug` (R1 retry with descriptive slug)
 # The shape is "TKT-" + at least 3 segments separated by "-", where each
 # segment is `[a-zA-Z0-9-]+`. Defense-in-depth — the ticket factory
 # enforces the canonical format, but the resolver re-checks before
@@ -724,8 +724,8 @@ if __name__ == "__main__":
         "verdict": "FAIL",
         "evidence": [
             {"file": "db/migrations/V001__init.sql", "line": 1, "note": "audit_outbox table not created"},
-            {"file": "services/outbox-drainer/src/queries.py", "line": 7, "note": "no audit_outbox drainer"},
-            {"file": "services/platform-api/cmd/main.go", "line": 159, "note": "idempotency middleware not mounted"},
+            {"file": "services/the project's outbox-drainer/src/queries.py", "line": 7, "note": "no audit_outbox drainer"},
+            {"file": "the project's API service/cmd/main.go", "line": 159, "note": "idempotency middleware not mounted"},
         ],
         "follow_up_ticket_ids": [
             "TKT-NNNb-FOUND-001",
@@ -733,7 +733,7 @@ if __name__ == "__main__":
             "TKT-NNNb-FOUND-003",
         ],
     }
-    ticket_scope = {"services/platform-api/internal/audit/"}
+    ticket_scope = {"the project's API service/internal/audit/"}
     r = classify_verdict_failure(layer29_failure, ticket_scope=ticket_scope)
     print("Layer 29 case:", r.ok, r.chosen_resolution, r.message)
     print("  follow_up_ticket_ids:", r.follow_up_ticket_ids)
@@ -745,12 +745,12 @@ if __name__ == "__main__":
     impl_defect = {
         "verdict": "FAIL",
         "evidence": [
-            {"file": "services/platform-api/internal/audit/audit_outbox.go", "line": 117,
-             "note": "OutboxAppend swallows ErrNoTenantID"},
+            {"file": "the project's outbox-drainer service", "line": 117,
+             "note": "the project's outbox-append helper swallows ErrNoTenantID"},
         ],
         # no follow_up_ticket_ids — call-site defect.
     }
-    ticket_scope2 = {"services/platform-api/internal/audit/"}
+    ticket_scope2 = {"the project's API service/internal/audit/"}
     r2 = classify_verdict_failure(impl_defect, ticket_scope=ticket_scope2)
     print("Impl defect case:", r2.ok, r2.chosen_resolution, r2.message)
     if not r2.ok or r2.chosen_resolution != RESOLUTION_LOOP_UNTIL_PASS:

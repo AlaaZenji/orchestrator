@@ -49,7 +49,6 @@ where = ["src"]
     "templates/scripts/*.py",
     "templates/prompts/*.md",
     "templates/docs/*.md",
-    "templates/slash_commands/*.md",
     "templates/migrations/postgres/*.sql",
     "templates/migrations/sqlite/*.sql",
     "global_slash_commands/*.md",

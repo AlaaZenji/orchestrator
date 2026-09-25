@@ -34,16 +34,10 @@ PACKAGE_ROOT = Path(__file__).parent
 TEMPLATES = PACKAGE_ROOT / "templates"
 GLOBAL_SLASH_COMMANDS = PACKAGE_ROOT / "global_slash_commands"
 
-# 20 slash command templates (renamed at install time with the user's prefix)
-SLASH_COMMAND_TEMPLATES = [
-    "orch-burn.md", "orch-burn-queue.md", "orch-work.md",
-    "orch-discover.md", "orch-ticket.md", "orch-fill-queue.md",
-    "orch-architect.md", "orch-adr-audit.md", "orch-vision.md",
-    "orch-approval.md", "orch-fitness.md", "orch-golden.md",
-    "orch-research.md", "orch-review.md", "orch-scheduler.md",
-    "orch-status.md", "orch-timer.md", "orch-evolve.md",
-    "orch-expert-council.md", "orch-auto.md",
-]
+# NOTE: This package ships only /setup-project globally. Per-prefix slash
+# commands (e.g. <prefix>-burn) are intentionally NOT shipped — the user
+# writes their own domain-specific commands after bootstrap. This keeps
+# the orchestrator truly project-agnostic.
 
 # Engine-source resolution order. The package itself is the only source —
 # no project-specific fallback. Vendored dirs are a developer convenience.
@@ -171,14 +165,10 @@ def cmd_init(args):
                 shutil.copy(src_doc, dst_doc)
                 result["files_written"].append(str(dst_doc))
 
-    # 6. Install slash commands GLOBALLY (per user's prefix)
-    written_cmds = install_slash_commands(
-        prefix=args.prefix,
-        project_name=args.project_name,
-        target_path=args.target,
-        write_to_global=True,
-    )
-    result["files_written"].extend(written_cmds)
+    # 6. Install the global setup-project slash command (always global)
+    setup_cmd = install_setup_slash_command()
+    if setup_cmd:
+        result["files_written"].append(setup_cmd)
 
     # 7. Wire SessionStart hook
     _wire_session_start_hook(target, original_path=args.target)
@@ -238,16 +228,9 @@ def cmd_upgrade(args):
 
 
 def cmd_install_cli(args):
-    """Install the 20 slash commands to ~/.claude/commands/ with the given prefix."""
-    return {
-        "ok": True,
-        "files_written": install_slash_commands(
-            prefix=args.prefix,
-            project_name=args.project_name,
-            target_path=None,
-            write_to_global=True,
-        ),
-    }
+    """Install /setup-project to ~/.claude/commands/ (the only global command)."""
+    installed = install_setup_slash_command()
+    return {"ok": True, "files_written": [installed] if installed else []}
 
 
 def cmd_doctor(args):
@@ -259,7 +242,10 @@ def cmd_doctor(args):
     checks.append({"name": "engine_scripts", "ok": n_scripts >= 11, "value": n_scripts, "expected": "≥11"})
 
     n_cmds = len(list(Path.home().glob(f".claude/commands/{args.prefix}-*.md"))) if args.prefix else 0
-    checks.append({"name": "slash_commands_global", "ok": n_cmds == 20, "value": n_cmds, "expected": 20})
+    # The orchestrator-runtime package is minimal — it ships only /setup-project
+    # globally. Per-prefix slash commands (e.g. <prefix>-burn) are project-specific
+    # and written by the user. So we expect 0 prefix-specific commands.
+    checks.append({"name": "slash_commands_global", "ok": True, "value": n_cmds, "expected": "0 (minimal — write your own)"})
 
     for doc in ("CLAUDE.md", "orchestrator/ARCHITECTURE.md", "orchestrator/WORKFLOW.md", "orchestrator/CONVENTIONS.md"):
         p = target / doc
@@ -306,43 +292,16 @@ def cmd_doctor(args):
 
 # --- Slash command installation --------------------------------------------
 
-def install_slash_commands(prefix: str, project_name: str, target_path: Optional[str], write_to_global: bool = True) -> List[str]:
-    """Generate the 20 slash commands, renamed with the user's prefix.
-
-    Installs to ~/.claude/commands/ by default. The user can invoke /<prefix>-burn
-    from any project on the laptop — that's the "global to laptop" promise.
-    """
-    src_dir = TEMPLATES / "slash_commands"
-    dst_dir = Path.home() / ".claude" / "commands"
-    dst_dir.mkdir(parents=True, exist_ok=True)
-
-    # Substitution: rename `orch-` (the template default) → user's prefix
-    written = []
-    for src_name in SLASH_COMMAND_TEMPLATES:
-        src_path = src_dir / src_name
-        if not src_path.exists():
-            continue
-        text = src_path.read_text()
-
-        # Replace path placeholder if we have a target
-        if target_path:
-            text = text.replace("<project_root>", target_path)
-
-        # Rename orch- → user's prefix in command references (NOT in prose)
-        text = re.sub(r"/orch-([a-z-]+)", f"/{prefix}-\\1", text)
-
-        # Replace project name
-        text = text.replace("the orchestrator", project_name)
-        text = re.sub(r"^description: .+$", f"description: {re.sub(r'^# ', '', text.splitlines()[0]) if False else 'command'}", text, count=0, flags=re.MULTILINE)
-        # Simpler description rewrite: keep the existing one and just append project name
-        text = re.sub(r"^description: (.+)$", lambda m: f"description: {m.group(1)} — {project_name}", text, count=1, flags=re.MULTILINE)
-
-        dst_name = src_name.replace("orch-", f"{prefix}-")
-        dst_path = dst_dir / dst_name
-        dst_path.write_text(text)
-        written.append(str(dst_path))
-
-    return written
+def install_setup_slash_command() -> Optional[str]:
+    """Install /setup-project to ~/.claude/commands/ if not already present."""
+    src = GLOBAL_SLASH_COMMANDS / "setup-project.md"
+    if not src.exists():
+        return None
+    dst = Path.home() / ".claude" / "commands" / "setup-project.md"
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    if not dst.exists():
+        shutil.copy(src, dst)
+    return str(dst)
 
 
 # --- Helpers ----------------------------------------------------------------
@@ -378,7 +337,7 @@ def _render_claude_md(args) -> str:
         "**Idempotency.** Writes are guarded by `idempotency_key` or `INSERT ... ON CONFLICT`.",
         "**No secrets in code.** Use environment variables; rotate quarterly.",
         "**Tests on every PR.** Unit + integration minimum.",
-        "**Type safety** (TypeScript strict, Python type hints, Go types) — no untyped exports.",
+        "**Type safety** (the project's primary UI language, Python type hints, the project's primary systems language types) — no untyped exports.",
         "**Lint clean** — `pnpm lint` (or equivalent) passes before merge.",
         "**External validation** for any model that ships to users.",
         "**Outbox-first** for any operator action — never lose a user request, even if downstream fails.",

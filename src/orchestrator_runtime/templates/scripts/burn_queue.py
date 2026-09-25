@@ -44,47 +44,47 @@ MAX_PARALLEL = 5
 
 
 # ---------------------------------------------------------------------------
-# CDS burn gate (ADR-0028 §8.6 — TKT-NNN)
+# the project's domain decision support burn gate (the project's decision records §8.6 — TKT-NNN)
 # ---------------------------------------------------------------------------
 #
-# Per ADR-0028 §8.6, the burn queue MUST consult `cds_burn_gate.py` before
-# picking up a CDS-class ticket. Exit codes:
+# Per the project's decision records §8.6, the burn queue MUST consult `burn_gate.py` before
+# picking up a the project's domain decision support-class ticket. Exit codes:
 #   0 = PASS  — gate satisfied; proceed to claim
 #   1 = FAIL  — gate unsatisfied (artifacts missing); skip + log
 #   2 = INVALID — gate cannot decide (ticket unreadable); surface per §7 BLOCKED
-#   3 = NOT-CDS — ticket is explicitly not CDS-class; proceed unchanged
+#   3 = NOT-the project's domain decision support — ticket is explicitly not the project's domain decision support-class; proceed unchanged
 #
-# Stdlib-only (matches cds_burn_gate.py constraint). Reversible: delete the
+# Stdlib-only (matches burn_gate.py constraint). Reversible: delete the
 # call site in force_claim_ticket() to revert.
 # ---------------------------------------------------------------------------
 
 
 class CdsGateSkip(Exception):
-    """Raised when cds_burn_gate returns FAIL (exit 1) or INVALID (exit 2).
+    """Raised when burn_gate returns FAIL (exit 1) or INVALID (exit 2).
 
     Carries the exit code so the dispatcher can emit the correct log tag:
-      exit 1 → `[CDS-GATE-FAIL]`  (skip; log missing artifact path)
-      exit 2 → `[CDS-GATE-INVALID]`  (surface; BLOCKED escalation per ADR-0028 §7)
+      exit 1 → `[the project's domain decision support-GATE-FAIL]`  (skip; log missing artifact path)
+      exit 2 → `[the project's domain decision support-GATE-INVALID]`  (surface; BLOCKED escalation per the project's decision records §7)
     """
 
     def __init__(self, ticket_id: str, code: int, reason: str = ""):
-        super().__init__(reason or f"cds_burn_gate exit {code} for {ticket_id}")
+        super().__init__(reason or f"burn_gate exit {code} for {ticket_id}")
         self.ticket_id = ticket_id
         self.code = code
         self.reason = reason
 
     @property
     def tag(self) -> str:
-        return "CDS-GATE-FAIL" if self.code == 1 else "CDS-GATE-INVALID"
+        return "the project's domain decision support-GATE-FAIL" if self.code == 1 else "the project's domain decision support-GATE-INVALID"
 
 
-CDS_GATE_SCRIPT = ROOT / "orchestrator" / "scripts" / "cds_burn_gate.py"
+CDS_GATE_SCRIPT = ROOT / "orchestrator" / "scripts" / "burn_gate.py"
 
 
 def _cds_progress_log() -> Path:
     """Path to today's burn-queue progress log.
 
-    Per ADR-0028 §8.6 + the §7 BLOCKED escalation convention: write one row
+    Per the project's decision records §8.6 + the §7 BLOCKED escalation convention: write one row
     per gate decision so the orchestrator can audit what was skipped.
     """
     name = f"{datetime.now(timezone.utc).strftime('%Y-%m-%d')}-burn-queue.md"
@@ -92,14 +92,14 @@ def _cds_progress_log() -> Path:
 
 
 def cds_burn_gate_check(ticket_id: str) -> int:
-    """Invoke `cds_burn_gate.py --ticket=<id>` and append a decision row
+    """Invoke `burn_gate.py --ticket=<id>` and append a decision row
     to today's progress log.
 
-    Returns the script's exit code (0=PASS, 1=FAIL, 2=INVALID, 3=NOT-CDS).
-    On FAIL or INVALID, the function logs `[CDS-GATE-FAIL]` or
-    `[CDS-GATE-INVALID]` to `progress/YYYY-MM-DD-burn-queue.md` before
+    Returns the script's exit code (0=PASS, 1=FAIL, 2=INVALID, 3=NOT-the project's domain decision support).
+    On FAIL or INVALID, the function logs `[the project's domain decision support-GATE-FAIL]` or
+    `[the project's domain decision support-GATE-INVALID]` to `progress/YYYY-MM-DD-burn-queue.md` before
     returning, and the caller MUST skip the lease claim.
-    On PASS or NOT-CDS, the caller proceeds to claim unchanged.
+    On PASS or NOT-the project's domain decision support, the caller proceeds to claim unchanged.
 
     Never raises — every failure mode is swallowed so the burn queue
     always reaches its own dispatch loop (per "no silent failures").
@@ -122,20 +122,20 @@ def cds_burn_gate_check(ticket_id: str) -> int:
         rc = 2
         result = None  # type: ignore[assignment]
     # Fail-CLOSED (TKT-NNN FIX 1): any exit code outside the documented
-    # contract {0=PASS, 1=FAIL, 2=INVALID, 3=NOT-CDS} is upgraded to INVALID
-    # (2) per ADR-0028 §7 BLOCKED escalation. A buggy or compromised gate
+    # contract {0=PASS, 1=FAIL, 2=INVALID, 3=NOT-the project's domain decision support} is upgraded to INVALID
+    # (2) per the project's decision records §7 BLOCKED escalation. A buggy or compromised gate
     # emitting rc=4 (or anything else) MUST NOT silently bypass §8.6
     # enforcement. The orchestrator's default is deny, not permit.
     if rc not in (0, 1, 2, 3):
         rc = 2
     if rc in (1, 2):
-        tag = "CDS-GATE-FAIL" if rc == 1 else "CDS-GATE-INVALID"
+        tag = "the project's domain decision support-GATE-FAIL" if rc == 1 else "the project's domain decision support-GATE-INVALID"
         try:
             PROGRESS.mkdir(parents=True, exist_ok=True)
             with open(_cds_progress_log(), "a", encoding="utf-8") as f:
                 f.write(
                     f"[{tag}] {ticket_id} — "
-                    f"{'artifacts missing (see cds_burn_gate output)' if rc == 1 else 'gate cannot make decision (BLOCKED per §7)'}\n"
+                    f"{'artifacts missing (see burn_gate output)' if rc == 1 else 'gate cannot make decision (BLOCKED per §7)'}\n"
                 )
         except Exception:
             pass
@@ -218,13 +218,13 @@ print(f"Reaped {deleted} stale lease(s)")
 def force_claim_ticket(ticket_id: str, holder: str, ttl_min: int) -> int:
     """Force-claim a ticket via subprocess. Returns fencing_token or raises.
 
-    Wired with the CDS burn gate (ADR-0028 §8.6 — TKT-NNN):
-    - For every ticket, `cds_burn_gate.py --ticket=<id>` is invoked FIRST.
-    - Exit 0 (PASS) or 3 (NOT-CDS): proceed to the atomic lease claim.
+    Wired with the project's domain decision support burn gate (the project's decision records §8.6 — TKT-NNN):
+    - For every ticket, `burn_gate.py --ticket=<id>` is invoked FIRST.
+    - Exit 0 (PASS) or 3 (NOT-the project's domain decision support): proceed to the atomic lease claim.
     - Exit 1 (FAIL): raise CdsGateSkip(..., code=1) — log appended, lease NOT claimed.
     - Exit 2 (INVALID): raise CdsGateSkip(..., code=2) — BLOCKED escalation per §7.
-    Non-CDS tickets return NOT-CDS and proceed unchanged (per-tenant discipline
-    preserved: CLAUDE.md #2 — the integration is CDS-scope only).
+    Non-the project's domain decision support tickets return NOT-the project's domain decision support and proceed unchanged (per-tenant discipline
+    preserved: CLAUDE.md #2 — the integration is the project's domain decision support-scope only).
     """
     gate_rc = cds_burn_gate_check(ticket_id)
     if gate_rc in (1, 2):
@@ -341,7 +341,7 @@ def main():
             fencing_token = force_claim_ticket(ticket_id, args.holder, args.ttl_min)
             dispatched.append((ticket_id, fencing_token))
         except CdsGateSkip as e:
-            # ADR-0028 §8.6 — CDS burn gate returned FAIL or INVALID; skip the
+            # the project's decision records §8.6 — the project's domain decision support burn gate returned FAIL or INVALID; skip the
             # ticket (no lease claim attempted). The decision row is already
             # appended to progress/<today>-burn-queue.md inside cds_burn_gate_check.
             print(f"  ⚠️ [{e.tag}] {ticket_id}: {e.reason} — SKIPPED (no claim)")

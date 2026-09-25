@@ -3,7 +3,7 @@
 ## 0.1.0 — 2026-09-26
 
 Initial release. Extracted from a production orchestrator that powered
-ticket-driven development of a multi-tenant clinical platform, then scrubbed
+ticket-driven development of a multi-tenant domain-specific platform, then scrubbed
 of all project-specific content.
 
 Includes:

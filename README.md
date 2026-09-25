@@ -4,7 +4,7 @@ A project-agnostic orchestrator engine that makes any AI coding agent ~70% faste
 
 It packages the canonical anti-stall pattern: small-scope tickets, write-files-first, heartbeat every 3 tool calls, no inline verifier sub-agents, 3-min watchdog timeout, 30-min lease TTL. Plus a burn queue, dependency audit, ticket state machine, transactional outbox, and 20 slash commands.
 
-Use it on **any project** — Python, TypeScript, Rust, Go, anything. Zero project-specific assumptions.
+Use it on **any project** — Python, TypeScript, Rust, the project's primary systems language, anything. Zero project-specific assumptions.
 
 ## What's in the box
 
@@ -69,7 +69,7 @@ The orchestrator needs somewhere to track lease + outbox state. Pick one:
 
 ## Why this exists
 
-The orchestrator runtime was extracted from a production codebase where it powered ticket-driven development of a multi-tenant clinical platform. The pattern reduced sub-agent stalls by ~70% (median ticket time: 1-3 min vs 10-15 min without). It's domain-agnostic — every mechanic generalizes.
+The orchestrator runtime was extracted from a production codebase where it powered ticket-driven development of a multi-tenant domain-specific platform. The pattern reduced sub-agent stalls by ~70% (median ticket time: 1-3 min vs 10-15 min without). It's domain-agnostic — every mechanic generalizes.
 
 The AI-speed fixes are baked in:
 
