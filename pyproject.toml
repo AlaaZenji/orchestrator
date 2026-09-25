@@ -1,0 +1,56 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "orchestrator-runtime"
+version = "0.1.0"
+description = "Project-agnostic orchestrator engine — burn queue, lease, heartbeat, watchdog, outbox, slash commands. Make any project's AI agent faster."
+readme = "README.md"
+license = { text = "MIT" }
+authors = [
+    { name = "AlaaZenji", email = "alaa.zingi.2004@gmail.com" },
+]
+keywords = ["orchestrator", "ai-agent", "burn-queue", "lease", "outbox", "ticketing", "automation"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Software Development",
+]
+requires-python = ">=3.10"
+dependencies = []
+
+[project.optional-dependencies]
+postgres = ["psycopg2-binary>=2.9"]
+sqlite = []
+test = ["pytest>=7"]
+
+[project.scripts]
+orchestrator-setup = "orchestrator_runtime.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/AlaaZenji/orchestrator"
+Repository = "https://github.com/AlaaZenji/orchestrator"
+Issues = "https://github.com/AlaaZenji/orchestrator/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"orchestrator_runtime" = [
+    "templates/scripts/*.py",
+    "templates/prompts/*.md",
+    "templates/docs/*.md",
+    "templates/slash_commands/*.md",
+    "templates/migrations/postgres/*.sql",
+    "templates/migrations/sqlite/*.sql",
+    "global_slash_commands/*.md",
+]
