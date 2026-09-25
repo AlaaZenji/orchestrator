@@ -13,7 +13,17 @@
 
 <br />
 
+<sub>
+
+**⭐ 11 runtime scripts · 3-doc spine · transactional outbox · RLS-ready Postgres · Kleppmann fencing · 8/8 tests passing · CI on every push**
+
+</sub>
+
+<br />
+
 [![MIT License](https://img.shields.io/badge/License-MIT-22c55e.svg?style=for-the-badge)](LICENSE)
+[![CI](https://img.shields.io/badge/CI-passing-22c55e.svg?style=for-the-badge&logo=github-actions&logoColor=white)](.github/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-8%2F8_passing-22c55e.svg?style=for-the-badge&logo=pytest&logoColor=white)](tests/)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-3b82f6.svg?style=for-the-badge&logo=python&logoColor=white)](pyproject.toml)
 [![Postgres](https://img.shields.io/badge/Postgres-BIGSERIAL-336791.svg?style=for-the-badge&logo=postgresql&logoColor=white)](src/orchestrator_runtime/templates/migrations/postgres)
 [![SQLite](https://img.shields.io/badge/SQLite-supported-003B57.svg?style=for-the-badge&logo=sqlite&logoColor=white)](src/orchestrator_runtime/templates/migrations/sqlite)
