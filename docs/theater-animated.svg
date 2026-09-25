@@ -1,0 +1,387 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 480" width="1280" height="480" role="img" aria-label="orchestrator-runtime live animation">
+  <title>orchestrator-runtime — live animation</title>
+  <desc>Tickets flowing through Queued → Active → Done states with verifier voting, outbox cascade, heartbeat, and watchdog timer. Loops every 8 seconds.</desc>
+
+  <defs>
+    <!-- Background gradient -->
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0a0e27"/>
+      <stop offset="100%" stop-color="#1e1b4b"/>
+    </linearGradient>
+
+    <!-- Card gradients per state -->
+    <linearGradient id="card-default" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+
+    <linearGradient id="card-claimed" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1e3a8a"/>
+      <stop offset="100%" stop-color="#172554"/>
+    </linearGradient>
+
+    <linearGradient id="card-executing" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#78350f"/>
+      <stop offset="100%" stop-color="#451a03"/>
+    </linearGradient>
+
+    <linearGradient id="card-verifying" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#155e75"/>
+      <stop offset="100%" stop-color="#083344"/>
+    </linearGradient>
+
+    <linearGradient id="card-done" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#14532d"/>
+      <stop offset="100%" stop-color="#052e16"/>
+    </linearGradient>
+
+    <!-- Glow filter -->
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1280" height="480" fill="url(#bg)"/>
+
+  <!-- Title -->
+  <text x="40" y="36" font-family="-apple-system, system-ui, sans-serif" font-size="20" font-weight="700" fill="#f8fafc" letter-spacing="-0.5">
+    ⚡ orchestrator-runtime — live
+  </text>
+  <text x="40" y="56" font-family="-apple-system, system-ui, sans-serif" font-size="12" fill="#94a3b8">
+    Tickets flow QUEUED → CLAIMED → EXECUTING → VERIFYING → DONE every 8s
+  </text>
+
+  <!-- ============= LANE: QUEUED ============= -->
+  <g transform="translate(40, 80)">
+    <rect width="240" height="320" rx="10" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+    <text x="16" y="24" font-family="-apple-system, system-ui, sans-serif" font-size="10" font-weight="700" fill="#64748b" letter-spacing="1">QUEUED</text>
+    <circle cx="208" cy="20" r="4" fill="#64748b"/>
+
+    <!-- Queued ticket 1 (static-ish) -->
+    <g transform="translate(12, 50)">
+      <rect width="216" height="48" rx="6" fill="url(#card-default)" stroke="#334155" stroke-width="1"/>
+      <rect width="3" height="48" rx="1.5" fill="#64748b"/>
+      <text x="12" y="16" font-family="monospace" font-size="10" fill="#64748b">TKT-P0-101</text>
+      <text x="12" y="32" font-family="-apple-system, system-ui, sans-serif" font-size="11" fill="#f8fafc" font-weight="600">Add RLS to audit_outbox</text>
+      <text x="12" y="44" font-family="-apple-system, system-ui, sans-serif" font-size="9" fill="#94a3b8">P0</text>
+    </g>
+
+    <!-- Queued ticket 2 -->
+    <g transform="translate(12, 110)">
+      <rect width="216" height="48" rx="6" fill="url(#card-default)" stroke="#334155" stroke-width="1"/>
+      <rect width="3" height="48" rx="1.5" fill="#64748b"/>
+      <text x="12" y="16" font-family="monospace" font-size="10" fill="#64748b">TKT-P1-102</text>
+      <text x="12" y="32" font-family="-apple-system, system-ui, sans-serif" font-size="11" fill="#f8fafc" font-weight="600">Optimize N+1 query</text>
+      <text x="12" y="44" font-family="-apple-system, system-ui, sans-serif" font-size="9" fill="#94a3b8">P1</text>
+    </g>
+
+    <!-- Queued ticket 3 (appears, then animates away) -->
+    <g opacity="0">
+      <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.1;0.85;1" dur="8s" repeatCount="indefinite"/>
+      <animateTransform attributeName="transform" type="translate" values="12,170; 12,170; 12,170; -300,170" keyTimes="0;0.1;0.85;1" dur="8s" repeatCount="indefinite"/>
+      <rect width="216" height="48" rx="6" fill="url(#card-default)" stroke="#334155" stroke-width="1"/>
+      <rect width="3" height="48" rx="1.5" fill="#64748b"/>
+      <text x="12" y="16" font-family="monospace" font-size="10" fill="#64748b">TKT-P0-103</text>
+      <text x="12" y="32" font-family="-apple-system, system-ui, sans-serif" font-size="11" fill="#f8fafc" font-weight="600">Cache invalidation</text>
+      <text x="12" y="44" font-family="-apple-system, system-ui, sans-serif" font-size="9" fill="#94a3b8">P0</text>
+    </g>
+  </g>
+
+  <!-- ============= LANE: ACTIVE ============= -->
+  <g transform="translate(300, 80)">
+    <rect width="640" height="320" rx="10" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+    <text x="16" y="24" font-family="-apple-system, system-ui, sans-serif" font-size="10" font-weight="700" fill="#94a3b8" letter-spacing="1">ACTIVE</text>
+
+    <!-- Pulse dot for active lane -->
+    <circle cx="608" cy="20" r="4" fill="#f59e0b">
+      <animate attributeName="opacity" values="1;0.3;1" dur="1s" repeatCount="indefinite"/>
+    </circle>
+
+    <!-- ===== Active ticket 1: Claimed → Executing → Verifying → Done ===== -->
+    <!-- CLAIMED state: 0-1s -->
+    <g opacity="0">
+      <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.05;0.15;0.16" dur="8s" repeatCount="indefinite"/>
+      <animateTransform attributeName="transform" type="translate" values="-260,40; -260,40; -260,40; -260,40" keyTimes="0;0.05;0.15;1" dur="8s" repeatCount="indefinite"/>
+      <rect width="608" height="80" rx="6" fill="url(#card-claimed)" stroke="#3b82f6" stroke-width="1.5"/>
+      <rect width="4" height="80" rx="2" fill="#3b82f6"/>
+      <text x="14" y="20" font-family="monospace" font-size="11" fill="#94a3b8">TKT-P0-103</text>
+      <text x="14" y="38" font-family="-apple-system, system-ui, sans-serif" font-size="13" fill="#f8fafc" font-weight="600">Cache invalidation</text>
+      <text x="14" y="58" font-family="monospace" font-size="10" fill="#3b82f6">CLAIMED · agent-α</text>
+      <text x="14" y="72" font-family="monospace" font-size="10" fill="#a855f7">fencing_token=1042</text>
+    </g>
+
+    <!-- EXECUTING state: 1-3s -->
+    <g opacity="0">
+      <animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;0.15;0.16;0.4;0.41;1" dur="8s" repeatCount="indefinite"/>
+      <rect width="608" height="80" rx="6" fill="url(#card-executing)" stroke="#f59e0b" stroke-width="1.5">
+        <animate attributeName="stroke-opacity" values="1;0.4;1" dur="0.8s" repeatCount="indefinite"/>
+      </rect>
+      <rect width="4" height="80" rx="2" fill="#f59e0b"/>
+      <text x="14" y="20" font-family="monospace" font-size="11" fill="#94a3b8">TKT-P0-103</text>
+      <text x="14" y="38" font-family="-apple-system, system-ui, sans-serif" font-size="13" fill="#f8fafc" font-weight="600">Cache invalidation</text>
+      <text x="14" y="58" font-family="monospace" font-size="10" fill="#f59e0b">EXECUTING · write-files-first</text>
+      <!-- Heartbeat ticks -->
+      <circle cx="580" cy="20" r="4" fill="#22c55e">
+        <animate attributeName="r" values="4;7;4" dur="1s" repeatCount="indefinite" begin="1s"/>
+        <animate attributeName="opacity" values="1;0.5;1" dur="1s" repeatCount="indefinite" begin="1s"/>
+      </circle>
+      <text x="560" y="22" font-family="monospace" font-size="9" fill="#22c55e">●</text>
+    </g>
+
+    <!-- VERIFYING state: 3-4.5s — 3 verifier bars fill in -->
+    <g opacity="0">
+      <animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;0.4;0.41;0.55;0.56;1" dur="8s" repeatCount="indefinite"/>
+      <rect width="608" height="80" rx="6" fill="url(#card-verifying)" stroke="#06b6d4" stroke-width="1.5"/>
+      <rect width="4" height="80" rx="2" fill="#06b6d4"/>
+      <text x="14" y="20" font-family="monospace" font-size="11" fill="#94a3b8">TKT-P0-103</text>
+      <text x="14" y="38" font-family="-apple-system, system-ui, sans-serif" font-size="13" fill="#f8fafc" font-weight="600">Cache invalidation</text>
+      <text x="14" y="55" font-family="monospace" font-size="10" fill="#06b6d4">VERIFYING · 3 lenses</text>
+      <!-- Verifier bars (animated fill) -->
+      <g transform="translate(14, 64)">
+        <rect width="180" height="6" rx="3" fill="#1e293b"/>
+        <rect width="180" height="6" rx="3" fill="#22c55e" opacity="0">
+          <animate attributeName="width" values="0;180" dur="0.6s" begin="3.2s; loop.end+0s" fill="freeze"/>
+        </rect>
+        <text x="186" y="6" font-family="monospace" font-size="9" fill="#22c55e">correctness</text>
+
+        <rect x="0" y="10" width="180" height="6" rx="3" fill="#1e293b"/>
+        <rect x="0" y="10" width="180" height="6" rx="3" fill="#22c55e" opacity="0">
+          <animate attributeName="width" values="0;180" dur="0.6s" begin="3.4s; loop.end+0s" fill="freeze"/>
+        </rect>
+        <text x="186" y="16" font-family="monospace" font-size="9" fill="#22c55e">per_tenant</text>
+      </g>
+    </g>
+
+    <!-- Outbox cascade: 4.5-5.5s — 5 steps light up sequentially -->
+    <g opacity="0">
+      <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.55;0.56;0.7;0.71" dur="8s" repeatCount="indefinite"/>
+      <rect width="608" height="80" rx="6" fill="url(#card-verifying)" stroke="#06b6d4" stroke-width="1.5"/>
+      <rect width="4" height="80" rx="2" fill="#06b6d4"/>
+      <text x="14" y="20" font-family="monospace" font-size="11" fill="#94a3b8">TKT-P0-103</text>
+      <text x="14" y="38" font-family="-apple-system, system-ui, sans-serif" font-size="13" fill="#f8fafc" font-weight="600">Outbox cascade (5 sub-actions)</text>
+      <g transform="translate(14, 50)" font-family="monospace" font-size="10">
+        <text x="0" y="10" fill="#22c55e">
+          <tspan>✓ frontmatter</tspan>
+          <animate attributeName="fill" values="#64748b;#22c55e" dur="0.1s" begin="4.5s" fill="freeze"/>
+        </text>
+        <text x="100" y="10" fill="#64748b">
+          <tspan>✓ tickets-index</tspan>
+          <animate attributeName="fill" values="#64748b;#22c55e" dur="0.1s" begin="4.7s" fill="freeze"/>
+        </text>
+        <text x="200" y="10" fill="#64748b">
+          <tspan>○ progress-log</tspan>
+          <animate attributeName="fill" values="#64748b;#22c55e" dur="0.1s" begin="4.9s" fill="freeze"/>
+        </text>
+        <text x="300" y="10" fill="#64748b">
+          <tspan>○ state-md</tspan>
+          <animate attributeName="fill" values="#64748b;#22c55e" dur="0.1s" begin="5.1s" fill="freeze"/>
+        </text>
+        <text x="400" y="10" fill="#64748b">
+          <tspan>○ commit</tspan>
+          <animate attributeName="fill" values="#64748b;#22c55e" dur="0.1s" begin="5.3s" fill="freeze"/>
+        </text>
+      </g>
+    </g>
+
+    <!-- ===== Active ticket 2: Offset by 2 seconds ===== -->
+    <!-- CLAIMED state: 2-3s -->
+    <g opacity="0">
+      <animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;0.25;0.26;0.4;0.41;1" dur="8s" repeatCount="indefinite"/>
+      <rect width="608" height="80" rx="6" fill="url(#card-claimed)" stroke="#3b82f6" stroke-width="1.5"/>
+      <rect width="4" height="80" rx="2" fill="#3b82f6"/>
+      <text x="14" y="20" font-family="monospace" font-size="11" fill="#94a3b8">TKT-P1-104</text>
+      <text x="14" y="38" font-family="-apple-system, system-ui, sans-serif" font-size="13" fill="#f8fafc" font-weight="600">Multi-tenant FK enforcement</text>
+      <text x="14" y="58" font-family="monospace" font-size="10" fill="#3b82f6">CLAIMED · agent-β</text>
+      <text x="14" y="72" font-family="monospace" font-size="10" fill="#a855f7">fencing_token=1043</text>
+    </g>
+
+    <!-- EXECUTING state: 3-5s -->
+    <g opacity="0">
+      <animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;0.4;0.41;0.6;0.61;1" dur="8s" repeatCount="indefinite"/>
+      <rect width="608" height="80" rx="6" fill="url(#card-executing)" stroke="#f59e0b" stroke-width="1.5">
+        <animate attributeName="stroke-opacity" values="1;0.4;1" dur="0.8s" repeatCount="indefinite" begin="3s"/>
+      </rect>
+      <rect width="4" height="80" rx="2" fill="#f59e0b"/>
+      <text x="14" y="20" font-family="monospace" font-size="11" fill="#94a3b8">TKT-P1-104</text>
+      <text x="14" y="38" font-family="-apple-system, system-ui, sans-serif" font-size="13" fill="#f8fafc" font-weight="600">Multi-tenant FK enforcement</text>
+      <text x="14" y="58" font-family="monospace" font-size="10" fill="#f59e0b">EXECUTING · write-files-first</text>
+    </g>
+
+    <!-- VERIFYING state: 5-6.5s -->
+    <g opacity="0">
+      <animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;0.6;0.61;0.78;0.79;1" dur="8s" repeatCount="indefinite"/>
+      <rect width="608" height="80" rx="6" fill="url(#card-verifying)" stroke="#06b6d4" stroke-width="1.5"/>
+      <rect width="4" height="80" rx="2" fill="#06b6d4"/>
+      <text x="14" y="20" font-family="monospace" font-size="11" fill="#94a3b8">TKT-P1-104</text>
+      <text x="14" y="38" font-family="-apple-system, system-ui, sans-serif" font-size="13" fill="#f8fafc" font-weight="600">Multi-tenant FK enforcement</text>
+      <text x="14" y="55" font-family="monospace" font-size="10" fill="#06b6d4">VERIFYING · 3 lenses</text>
+      <g transform="translate(14, 64)">
+        <rect width="180" height="6" rx="3" fill="#1e293b"/>
+        <rect width="180" height="6" rx="3" fill="#22c55e" opacity="0">
+          <animate attributeName="width" values="0;180" dur="0.6s" begin="5.2s" fill="freeze"/>
+        </rect>
+        <text x="186" y="6" font-family="monospace" font-size="9" fill="#22c55e">correctness</text>
+
+        <rect x="0" y="10" width="180" height="6" rx="3" fill="#1e293b"/>
+        <rect x="0" y="10" width="180" height="6" rx="3" fill="#22c55e" opacity="0">
+          <animate attributeName="width" values="0;180" dur="0.6s" begin="5.4s" fill="freeze"/>
+        </rect>
+        <text x="186" y="16" font-family="monospace" font-size="9" fill="#22c55e">per_tenant</text>
+      </g>
+    </g>
+
+    <!-- ===== Active ticket 3 (offset by 4s) ===== -->
+    <g opacity="0">
+      <animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;0.5;0.51;0.65;0.66;1" dur="8s" repeatCount="indefinite"/>
+      <rect width="608" height="80" rx="6" fill="url(#card-claimed)" stroke="#3b82f6" stroke-width="1.5"/>
+      <rect width="4" height="80" rx="2" fill="#3b82f6"/>
+      <text x="14" y="20" font-family="monospace" font-size="11" fill="#94a3b8">TKT-P2-105</text>
+      <text x="14" y="38" font-family="-apple-system, system-ui, sans-serif" font-size="13" fill="#f8fafc" font-weight="600">Refactor burn_queue errors</text>
+      <text x="14" y="58" font-family="monospace" font-size="10" fill="#3b82f6">CLAIMED · agent-γ</text>
+      <text x="14" y="72" font-family="monospace" font-size="10" fill="#a855f7">fencing_token=1044</text>
+    </g>
+
+    <!-- Lifecycle step indicators (bottom of active lane) -->
+    <g transform="translate(20, 250)">
+      <text x="0" y="0" font-family="monospace" font-size="9" fill="#64748b">CLAIMED → EXECUTING → VERIFYING → CASCADE → DONE</text>
+
+      <!-- Progress dots for ticket 1 -->
+      <g transform="translate(0, 20)">
+        <circle cx="60" cy="0" r="5" fill="#22c55e">
+          <animate attributeName="opacity" values="0.3;1;0.3" dur="2s" begin="0s" repeatCount="indefinite"/>
+        </circle>
+        <text x="60" y="20" font-family="monospace" font-size="8" fill="#64748b" text-anchor="middle">claim</text>
+
+        <circle cx="160" cy="0" r="5" fill="#22c55e">
+          <animate attributeName="opacity" values="0.3;1;0.3" dur="2s" begin="0.4s" repeatCount="indefinite"/>
+        </circle>
+        <text x="160" y="20" font-family="monospace" font-size="8" fill="#64748b" text-anchor="middle">execute</text>
+
+        <circle cx="260" cy="0" r="5" fill="#22c55e">
+          <animate attributeName="opacity" values="0.3;1;0.3" dur="2s" begin="0.8s" repeatCount="indefinite"/>
+        </circle>
+        <text x="260" y="20" font-family="monospace" font-size="8" fill="#64748b" text-anchor="middle">verify</text>
+
+        <circle cx="360" cy="0" r="5" fill="#22c55e">
+          <animate attributeName="opacity" values="0.3;1;0.3" dur="2s" begin="1.2s" repeatCount="indefinite"/>
+        </circle>
+        <text x="360" y="20" font-family="monospace" font-size="8" fill="#64748b" text-anchor="middle">cascade</text>
+
+        <circle cx="460" cy="0" r="5" fill="#22c55e">
+          <animate attributeName="opacity" values="0.3;1;0.3" dur="2s" begin="1.6s" repeatCount="indefinite"/>
+        </circle>
+        <text x="460" y="20" font-family="monospace" font-size="8" fill="#64748b" text-anchor="middle">done</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- ============= LANE: DONE ============= -->
+  <g transform="translate(960, 80)">
+    <rect width="280" height="320" rx="10" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+    <text x="16" y="24" font-family="-apple-system, system-ui, sans-serif" font-size="10" font-weight="700" fill="#94a3b8" letter-spacing="1">DONE</text>
+    <circle cx="248" cy="20" r="4" fill="#22c55e"/>
+
+    <!-- Done ticket 1 (static) -->
+    <g transform="translate(12, 50)">
+      <rect width="256" height="56" rx="6" fill="url(#card-done)" stroke="#22c55e" stroke-width="1" opacity="0.7"/>
+      <rect width="3" height="56" rx="1.5" fill="#22c55e"/>
+      <text x="12" y="16" font-family="monospace" font-size="10" fill="#64748b">TKT-P0-100</text>
+      <text x="12" y="32" font-family="-apple-system, system-ui, sans-serif" font-size="11" fill="#f8fafc" font-weight="600">Implement lease heartbeat</text>
+      <text x="12" y="48" font-family="monospace" font-size="9" fill="#22c55e">✓ DONE · 2m 14s</text>
+    </g>
+
+    <!-- Done ticket 2 (static) -->
+    <g transform="translate(12, 116)">
+      <rect width="256" height="56" rx="6" fill="url(#card-done)" stroke="#22c55e" stroke-width="1" opacity="0.7"/>
+      <rect width="3" height="56" rx="1.5" fill="#22c55e"/>
+      <text x="12" y="16" font-family="monospace" font-size="10" fill="#64748b">TKT-P0-099</text>
+      <text x="12" y="32" font-family="-apple-system, system-ui, sans-serif" font-size="11" fill="#f8fafc" font-weight="600">Postgres BIGSERIAL lease</text>
+      <text x="12" y="48" font-family="monospace" font-size="9" fill="#22c55e">✓ DONE · 4m 02s</text>
+    </g>
+
+    <!-- Done ticket 3 (appears at T=6s) -->
+    <g opacity="0">
+      <animate attributeName="opacity" values="0;0;0.7;0.7" keyTimes="0;0.75;0.76;1" dur="8s" repeatCount="indefinite"/>
+      <animateTransform attributeName="transform" type="translate" values="320,182; 320,182; 12,182; 12,182" keyTimes="0;0.75;0.76;1" dur="8s" repeatCount="indefinite"/>
+      <rect width="256" height="56" rx="6" fill="url(#card-done)" stroke="#22c55e" stroke-width="1" opacity="0.7"/>
+      <rect width="3" height="56" rx="1.5" fill="#22c55e"/>
+      <text x="12" y="16" font-family="monospace" font-size="10" fill="#64748b">TKT-P0-103</text>
+      <text x="12" y="32" font-family="-apple-system, system-ui, sans-serif" font-size="11" fill="#f8fafc" font-weight="600">Cache invalidation</text>
+      <text x="12" y="48" font-family="monospace" font-size="9" fill="#22c55e">✓ DONE · 6.8s</text>
+    </g>
+
+    <!-- Done ticket 4 (appears at T=7s, slides out at T=8s) -->
+    <g opacity="0">
+      <animate attributeName="opacity" values="0;0;0.7;0.7;0" keyTimes="0;0.85;0.86;0.95;1" dur="8s" repeatCount="indefinite"/>
+      <animateTransform attributeName="transform" type="translate" values="320,248; 320,248; 12,248; 12,248; 320,248" keyTimes="0;0.85;0.86;0.95;1" dur="8s" repeatCount="indefinite"/>
+      <rect width="256" height="56" rx="6" fill="url(#card-done)" stroke="#22c55e" stroke-width="1" opacity="0.7"/>
+      <rect width="3" height="56" rx="1.5" fill="#22c55e"/>
+      <text x="12" y="16" font-family="monospace" font-size="10" fill="#64748b">TKT-P1-104</text>
+      <text x="12" y="32" font-family="-apple-system, system-ui, sans-serif" font-size="11" fill="#f8fafc" font-weight="600">Multi-tenant FK enforcement</text>
+      <text x="12" y="48" font-family="monospace" font-size="9" fill="#22c55e">✓ DONE · 5.2s</text>
+    </g>
+  </g>
+
+  <!-- ============= FOOTER METRICS ============= -->
+  <g transform="translate(40, 416)">
+    <!-- Outbox queue -->
+    <g transform="translate(0, 0)">
+      <text x="0" y="0" font-family="-apple-system, system-ui, sans-serif" font-size="9" fill="#64748b" letter-spacing="1">OUTBOX QUEUE</text>
+      <text x="0" y="20" font-family="monospace" font-size="16" font-weight="700" fill="#06b6d4">
+        <animate attributeName="opacity" values="0;1;1;1;0" keyTimes="0;0.55;0.6;0.7;0.71" dur="8s" repeatCount="indefinite"/>5
+      </text>
+      <text x="0" y="36" font-family="monospace" font-size="10" fill="#94a3b8">pending</text>
+    </g>
+
+    <!-- Heartbeat -->
+    <g transform="translate(180, 0)">
+      <text x="0" y="0" font-family="-apple-system, system-ui, sans-serif" font-size="9" fill="#64748b" letter-spacing="1">HEARTBEAT</text>
+      <circle cx="8" cy="14" r="5" fill="#22c55e">
+        <animate attributeName="r" values="4;7;4" dur="1.2s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="1;0.5;1" dur="1.2s" repeatCount="indefinite"/>
+      </circle>
+      <text x="20" y="20" font-family="monospace" font-size="14" font-weight="600" fill="#22c55e">alive</text>
+      <text x="0" y="36" font-family="monospace" font-size="10" fill="#94a3b8">1.2s avg</text>
+    </g>
+
+    <!-- Watchdog -->
+    <g transform="translate(380, 0)">
+      <text x="0" y="0" font-family="-apple-system, system-ui, sans-serif" font-size="9" fill="#64748b" letter-spacing="1">WATCHDOG</text>
+      <text x="0" y="20" font-family="monospace" font-size="16" font-weight="700" fill="#f59e0b">3:00</text>
+      <rect x="0" y="28" width="120" height="4" rx="2" fill="#1e293b"/>
+      <rect x="0" y="28" width="120" height="4" rx="2" fill="#f59e0b"/>
+    </g>
+
+    <!-- Burn rate sparkline -->
+    <g transform="translate(580, 0)">
+      <text x="0" y="0" font-family="-apple-system, system-ui, sans-serif" font-size="9" fill="#64748b" letter-spacing="1">BURN RATE</text>
+      <text x="0" y="20" font-family="monospace" font-size="16" font-weight="700" fill="#22c55e">
+        <animate attributeName="textContent" values="2;3;4;5" keyTimes="0;0.4;0.7;0.9" dur="8s" repeatCount="indefinite"/>5
+      </text>
+      <text x="0" y="36" font-family="monospace" font-size="10" fill="#94a3b8">/hr</text>
+      <!-- Sparkline -->
+      <polyline points="40,40 55,35 70,32 85,28 100,30 115,25 130,22 145,18 160,15 175,12 190,8"
+                fill="none" stroke="#22c55e" stroke-width="1.5" opacity="0.8">
+        <animate attributeName="points"
+                 values="40,40 55,40 70,40 85,40 100,40 115,40 130,40 145,40 160,40 175,40 190,40;
+                         40,38 55,36 70,34 85,32 100,30 115,28 130,26 145,24 160,22 175,20 190,18;
+                         40,38 55,36 70,34 85,32 100,30 115,28 130,26 145,24 160,22 175,20 190,18"
+                 keyTimes="0;0.5;1" dur="8s" repeatCount="indefinite"/>
+      </polyline>
+    </g>
+
+    <!-- Anti-stall guarantee -->
+    <g transform="translate(820, 0)">
+      <text x="0" y="0" font-family="-apple-system, system-ui, sans-serif" font-size="9" fill="#64748b" letter-spacing="1">STALL PREVENTION</text>
+      <text x="0" y="20" font-family="-apple-system, system-ui, sans-serif" font-size="16" font-weight="700" fill="#22c55e">~70%</text>
+      <text x="0" y="36" font-family="-apple-system, system-ui, sans-serif" font-size="10" fill="#94a3b8">reduction</text>
+    </g>
+  </g>
+
+  <!-- Bottom-right attribution -->
+  <text x="1240" y="464" font-family="-apple-system, system-ui, sans-serif" font-size="9" fill="#64748b" text-anchor="end">
+    github.com/AlaaZenji/orchestrator
+  </text>
+</svg>

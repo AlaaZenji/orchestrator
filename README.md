@@ -13,11 +13,15 @@
 
 <br />
 
+<img src="docs/theater-animated.svg" alt="Orchestrator Theater — live animation: tickets flowing through Queued → Active (Claimed, Executing, Verifying) → Done states with verifier voting, outbox cascade, heartbeat pulse, watchdog timer, and ~70% stall reduction metric. Loops every 8 seconds." width="100%"/>
+
+<br />
+
 <sub>
 
 **⭐ 11 runtime scripts · 3-doc spine · transactional outbox · RLS-ready Postgres · Kleppmann fencing · 8/8 tests passing · CI on every push**
 
-[**▶ Watch the Orchestrator Theater — live, interactive demo**](docs/theater.html)
+[**▶ Full interactive theater (click, pause, speed control)**](docs/theater.html)
 
 </sub>
 
