@@ -120,6 +120,7 @@ def cmd_init(args):
         target / "orchestrator" / "world-model",
         target / "orchestrator" / "blockers",
         target / "orchestrator" / "prompts",
+        target / "orchestrator" / "docs",
         target / "orchestrator" / "context",
         target / "orchestrator" / "state",
         target / ".claude" / "commands",

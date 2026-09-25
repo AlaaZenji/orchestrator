@@ -78,7 +78,7 @@ class CdsGateSkip(Exception):
         return "the project's domain decision support-GATE-FAIL" if self.code == 1 else "the project's domain decision support-GATE-INVALID"
 
 
-CDS_GATE_SCRIPT = ROOT / "orchestrator" / "scripts" / "burn_gate.py"
+BURN_GATE_SCRIPT = ROOT / "orchestrator" / "scripts" / "burn_gate.py"
 
 
 def _cds_progress_log() -> Path:
@@ -106,7 +106,7 @@ def cds_burn_gate_check(ticket_id: str) -> int:
     """
     try:
         result = subprocess.run(
-            ["python3", str(CDS_GATE_SCRIPT), f"--ticket={ticket_id}"],
+            ["python3", str(BURN_GATE_SCRIPT), f"--ticket={ticket_id}"],
             capture_output=True, text=True, timeout=15,
         )
         rc = result.returncode

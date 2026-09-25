@@ -1,0 +1,135 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+
+jobs:
+  lint:
+    name: Lint (syntax check)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Verify all Python files parse
+        run: |
+          python3 -m compileall -q src/orchestrator_runtime
+          echo "✓ all Python files parse cleanly"
+
+      - name: Verify SQL migrations are well-formed
+        run: |
+          for f in $(find src/orchestrator_runtime/templates/migrations -name "*.sql"); do
+            echo "checking: $f"
+            # Quick sanity check — file exists, contains BEGIN/COMMIT or is sqlite-style
+            test -s "$f" || (echo "EMPTY: $f" && exit 1)
+            head -1 "$f" | grep -q "^--" || (echo "MISSING HEADER: $f" && exit 1)
+          done
+          echo "✓ all SQL files have headers"
+
+  test:
+    name: Smoke test (bootstrap + doctor)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install package
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install -e .
+
+      - name: Run smoke test
+        run: |
+          python3 -m pytest tests/ -v
+
+      - name: Verify CLI is invokable
+        run: |
+          orchestrator-setup --help
+          echo "✓ CLI works"
+
+  scrub:
+    name: Verify project-agnosticism
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for project-specific content
+        run: |
+          # These terms must NEVER appear in the source tree
+          FORBIDDEN_TERMS=(
+            "health_ai"
+            "Astra"
+            "clinical"
+            "HL7"
+            "FHIR"
+            "MLLP"
+            "HAPI"
+            "CDS"
+            "RCM"
+            "EMR"
+            "EHR"
+            "patient"
+            "hospital"
+            "TrakCare"
+            "Waystar"
+            "Mirth"
+            "InterSystems"
+            "Lebanon"
+            "UAE"
+            "MENA"
+            "NSSF"
+            "Bed Management"
+            "Command Center"
+            "Slice #1"
+            "slice-critique"
+            "Wave 2.5"
+            "PILOT-"
+            "TKT-P[0-9]-"
+            "TKT-ORCH-"
+            "TKT-DEVEX-"
+            "ADR-0014"
+            "ADR-0017"
+            "ADR-0022"
+            "ADR-0028"
+          )
+          FAILED=0
+          for term in "${FORBIDDEN_TERMS[@]}"; do
+            if grep -rln "$term" src/ docs/banner.svg 2>/dev/null | grep -v __pycache__ | grep -q .; then
+              echo "❌ FOUND: $term"
+              grep -rln "$term" src/ 2>/dev/null | grep -v __pycache__ | head -5
+              FAILED=1
+            fi
+          done
+          if [ $FAILED -eq 1 ]; then
+            echo "❌ Project-specific content detected"
+            exit 1
+          fi
+          echo "✓ No project-specific content found"
+
+  badges:
+    name: Build status badge
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Generate badge
+        run: |
+          if [ "${{ job.status }}" = "success" ]; then
+            echo "✓ CI passed"
+          else
+            echo "✗ CI failed"
+            exit 1
+          fi
