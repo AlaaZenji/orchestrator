@@ -159,6 +159,8 @@ The runtime is a **filesystem-as-database** orchestrator. Everything lives in `o
 
 ### 1. Discovery (`discover.py` + `/orch-discover`)
 
+<img src="docs/anim-discovery.svg" alt="Discovery: scanner sweeps code surface, finds TODO/FIXME/XXX markers, produces OPP-NNN opportunities" width="100%"/>
+
 Scans the codebase for opportunities that haven't become tickets yet. Discovers:
 
 - TODOs / FIXMEs / HACKs in code (regex sweep, language-aware)
@@ -172,6 +174,8 @@ Output: a list of `OPP-NNN` opportunities. The Expert Council routes each to the
 
 ### 2. Ticketing (`ticket_factory.py` + `/orch-ticket`)
 
+<img src="docs/anim-ticketing.svg" alt="Ticketing: ticket file being assembled — frontmatter, AC bullets, evidence file:line" width="100%"/>
+
 Crystallizes an opportunity into a fully-formed ticket with:
 
 - **Acceptance criteria** — derived from the discovery context
@@ -184,6 +188,8 @@ Crystallizes an opportunity into a fully-formed ticket with:
 The ticket is **vision-traceable** (every ticket ties back to a capability/ADR) and **evidence-backed** (every AC has a file:line).
 
 ### 3. Verification (3-6 perspective adversarial voting)
+
+<img src="docs/anim-verification.svg" alt="Verification: 6 verifier lenses vote in parallel — 5 pass, 1 fails, triggering loop-until-PASS retry" width="100%"/>
 
 Every ticket landing requires **multi-perspective verification** — self-attestation is forbidden. Dispatched in parallel with distinct lenses:
 
@@ -203,6 +209,8 @@ Every ticket landing requires **multi-perspective verification** — self-attest
 
 ### 4. Burn Queue (`burn_queue.py` + `/orch-burn` + `/orch-work`)
 
+<img src="docs/anim-burn-queue.svg" alt="Burn Queue: timeline showing CLAIM → EXECUTE → VERIFY → CASCADE → DONE phases" width="100%"/>
+
 The execution engine. Lists QUEUED tickets, claims up to N in parallel via the lease, emits READY-FOR-DISPATCH messages. The orchestrator (Claude session) dispatches workers via the Agent tool.
 
 **Anti-stall guarantees baked in:**
@@ -216,6 +224,8 @@ The execution engine. Lists QUEUED tickets, claims up to N in parallel via the l
 
 ### 5. Architecture Audit (`architecture_reconcile.py` + `/orch-architect`)
 
+<img src="docs/anim-architecture.svg" alt="Architecture Audit: INTENDED vs ACTUAL columns with green matches + red DRIFT line" width="100%"/>
+
 Compares **intended architecture** (ADRs + canonical ticket specs) vs **actual implementation** (code + tests + migrations + configs). Emits **drift findings**:
 
 - ADR-0008 says multi-tenancy-first, but new tables have no RLS → DRIFT
@@ -226,6 +236,8 @@ The orchestrator surfaces drift BEFORE it ships to users.
 
 ### 6. ADR Audit (`adr_audit.py` + `/orch-adr-audit`)
 
+<img src="docs/anim-adr.svg" alt="ADR Audit: list of claims with checkmarks for verified, X for unverified — 14 of 17 observed" width="100%"/>
+
 For each ADR, parses the **Decision** section's imperative claims and verifies each is observed in the codebase. Emits findings like:
 
 - ADR-0008: "every code path MUST exercise as the least-privileged role"
@@ -234,9 +246,13 @@ For each ADR, parses the **Decision** section's imperative claims and verifies e
 
 ### 7. Vision Reconciliation (`vision_audit.py` + `/orch-vision`)
 
+<img src="docs/anim-vision.svg" alt="Vision Reconciliation: world-model/ vs project/ streams merging via central reconciler" width="100%"/>
+
 Compares **world model** (vision/opportunities/decisions/capabilities/workflows YAML) vs **project state** (actual tickets + progress + STATE.md). Emits drift findings + new opportunities. Closes the silent-rot gap.
 
 ### 8. Approval Gate (`approval_gate.py` + `approval_binding.py` + `/orch-approval`)
+
+<img src="docs/anim-approval.svg" alt="Approval Gate: ticket transitions from PENDING (amber) to APPROVED (green) with fencing token" width="100%"/>
 
 Human-in-the-loop approvals for high-risk changes. Postgres-backed fencing token (Kleppmann monotonic). Approval artifacts are bound to a specific `ticket_version` — no replay attacks.
 
@@ -263,6 +279,8 @@ Human-in-the-loop approvals for high-risk changes. Postgres-backed fencing token
 
 ### 9. Fitness Gates (`fitness_functions.py` + `/orch-fitness`)
 
+<img src="docs/anim-fitness.svg" alt="Fitness Gates: 8 checkboxes in a 2x4 grid, all 8 passing" width="100%"/>
+
 **8 atomic CI gates**, one per CLAUDE.md non-negotiable. Each gate is a single Python script that exits 0 on PASS, 1 on FAIL. Run all 8 before any merge:
 
 ```
@@ -278,9 +296,13 @@ Human-in-the-loop approvals for high-risk changes. Postgres-backed fencing token
 
 ### 10. Resource Scheduler (`resource_scheduler.py` + `/orch-scheduler`)
 
+<img src="docs/anim-scheduler.svg" alt="Resource Scheduler: CPU/RAM bars animate, state machine cycles through IDLE → BUSY → OVER → RECOVER" width="100%"/>
+
 macOS-aware CPU/RAM probe. Hysteresis-based 4-state machine (idle / busy / overloaded / recovering). Caps sub-agent concurrency to prevent OOM.
 
 ### 11. Status & Timer (`status.py` + `estimated_completion.py` + `/orch-status` + `/orch-timer`)
+
+<img src="docs/anim-status.svg" alt="Status & Timer: 4 metric cards + ETA timeline" width="100%"/>
 
 Operational dashboard — at-a-glance view of:
 - Tickets by status (QUEUED / IN_PROGRESS / BLOCKED / DONE / SHIPPED)
@@ -292,6 +314,8 @@ Operational dashboard — at-a-glance view of:
 Timer: ETA projection for completing remaining tickets, broken down by deadline.
 
 ### 12. Expert Council (`expert_council.py` + `expert_agents.py` + `/orch-expert-council`)
+
+<img src="docs/anim-expert-council.svg" alt="Expert Council: OPP-NNN branching to 3 specialists + synthesis" width="100%"/>
 
 When a discovery produces an opportunity, the council **routes** it to the right specialist for review BEFORE it becomes a ticket. Specialists include:
 
@@ -306,6 +330,8 @@ When a discovery produces an opportunity, the council **routes** it to the right
 Each specialist writes a short review. The Expert Council synthesizes the reviews into the ticket's quality gates.
 
 ### 13. Self-Improvement (`evolve.py` + `/orch-evolve`)
+
+<img src="docs/anim-self-improvement.svg" alt="Self-Improvement: self-referential loop — orchestrator audits itself, emits orch-self ticket, improves, loops" width="100%"/>
 
 The orchestrator **audits itself**. Inspects its own failures, retries, verifier disagreements, token waste, drift patterns. Emits `orch-self` tickets:
 
