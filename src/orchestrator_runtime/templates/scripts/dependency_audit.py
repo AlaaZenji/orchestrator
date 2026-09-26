@@ -56,7 +56,7 @@ EXEMPT_PHASES: frozenset[str] = frozenset({"P0", "P1"})
 #: sweep rather than throwing — the global sweep treats missing/unparseable
 #: frontmatter as "not QUEUED, trivially OK".
 _FRONTMATTER_RE: re.Pattern[str] = re.compile(
-    r"\A---\s*\n(.*?)\n---\s*(?:\n|\Z)",
+    r"\A---\s*\n(.*?)(?:\n---\s*(?:\n|\Z)|\Z)",
     re.DOTALL,
 )
 
