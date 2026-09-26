@@ -40,7 +40,7 @@ PROGRESS = ROOT / "orchestrator" / "progress"
 SKIP_STATUSES = frozenset(["DONE", "CANCELLED", "DEPRECATED"])
 DEFAULT_WATCHDOG_MIN = 3
 DEFAULT_TTL_MIN = 30
-MAX_PARALLEL = 5
+MAX_PARALLEL = 6
 
 
 # ---------------------------------------------------------------------------
@@ -152,6 +152,31 @@ def read_ticket_status(ticket_path: Path) -> str:
         if line.startswith("status:"):
             return line.split(":", 1)[1].strip()
     return "UNKNOWN"
+
+
+def read_ticket_id(ticket_path: Path) -> str:
+    """Read the frontmatter `id:` field from a ticket file.
+
+    Per Final Follow-Up Directive §5: ticket-id is the canonical key. The
+    file stem (e.g., `TKT-DEEP-LAUNCH-001-foundation.md`) is a routing slug —
+    not the canonical id. Using the file stem as the ticket id (the prior
+    default) caused `cds_burn_gate.py --ticket=<id>` lookups to fail for
+    tickets with filename suffixes beyond their id (e.g., `*FU2`,
+    `*populate-cohort-uuid`, `*foundation`). Use this function instead.
+
+    Falls back to the file stem only when no `id:` field is found in the
+    first ~20 lines (legacy tickets from early bootstrapping).
+    """
+    try:
+        text = ticket_path.read_text(errors="ignore")
+    except Exception:
+        return ticket_path.stem
+    # Tolerate malformed frontmatter (missing closing `---`): scan only the
+    # first 20 lines and the line must be a clean `id: VALUE` shape.
+    for line in text.splitlines()[:20]:
+        if line.startswith("id:"):
+            return line.split(":", 1)[1].strip()
+    return ticket_path.stem
 
 
 def should_skip(ticket_path: Path) -> tuple[bool, str]:
@@ -336,7 +361,9 @@ def main():
     dispatched = []
 
     for ticket_path in burnable[:args.limit]:
-        ticket_id = ticket_path.stem
+        # Use canonical id from frontmatter, not the file stem
+        # (per TKT-DEEP-LAUNCH-* routing slugs like `-foundation`)
+        ticket_id = read_ticket_id(ticket_path)
         try:
             fencing_token = force_claim_ticket(ticket_id, args.holder, args.ttl_min)
             dispatched.append((ticket_id, fencing_token))
