@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bottleneck detector for the Astra burn-queue orchestrator.
+"""Bottleneck detector for the burn-queue orchestrator.
 
 Scans burn-queue output + leases + completed tickets for issues that slow or
 stall the queue. Each finding becomes an auto-filed ticket for Stage 2 to
@@ -190,7 +190,7 @@ def file_resolution_ticket(finding: Finding) -> Optional[str]:
     return fn(finding)
 
 
-def _new_ticket_id(prefix: str = "TKT-DEEP-ORCH") -> str:
+def _new_ticket_id(prefix: str = "TKT-ORCH") -> str:
     """Allocate a unique ticket ID by scanning for collisions."""
     pattern = re.compile(rf"{re.escape(prefix)}-(\d+)-")
     nums = []
@@ -206,7 +206,7 @@ def _allocate(prefix: str, n: int) -> str:
     """Allocate a deterministic ID prefix + counter."""
     # The mapping uses known troubleshooting categories.
     category = {
-        "TKT-DEEP-ORCH": ["fix-skip", "fix-drift", "fix-blocker", "fix-stale"][(n - 1) % 4],
+        "TKT-ORCH": ["fix-skip", "fix-drift", "fix-blocker", "fix-stale"][(n - 1) % 4],
     }.get(prefix, "fix")
     return f"{prefix}-{n:03d}-{category}"
 
@@ -289,7 +289,7 @@ priority: {priority}
 status: DRAFT
 created: 2026-09-26
 updated: 2026-09-26
-owner: astra-platform-team
+owner: orchestrator-team
 estimated_effort: 1h
 story_points: 3
 depends_on: []

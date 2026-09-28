@@ -7,8 +7,8 @@
 | Type | Pattern | Example |
 |---|---|---|
 | Top-level | `UPPERCASE.md` | `STATE.md`, `WORKFLOW.md` |
-| Ticket | `TKT-<PHASE>-<NNN>-<slug>.md` | `TKT-P0-001-postgres-rls.md` |
-| DevEx ticket | `TKT-DEVEX-<NNN>-<slug>.md` | `TKT-DEVEX-001-justfile-fix.md` |
+| Ticket | `TKT-<PHASE>-<NNN>-<slug>.md` | `TKT-<PHASE>-NNN-<slug>.md` |
+| Tooling ticket | `TKT-<AREA>-<NNN>-<slug>.md` | `TKT-TOOLING-001-justfile-fix.md` |
 | BLOCKER | `BLOCKER-<N>-<slug>.md` | `BLOCKER-1-pen-test-closer.md` |
 | Progress log | `progress/YYYY-MM-DD-<topic>.md` | `progress/2026-09-18-bootstrap.md` |
 
@@ -64,16 +64,16 @@ Slugs are kebab-case, max 5 words.
 
 ```yaml
 ---
-id: TKT-P0-001
-title: Postgres multi-tenant schema with RLS
-phase: P0
-priority: P0
+id: TKT-EXAMPLE-001
+title: <Ticket title>
+phase: <PHASE>
+priority: <P0|P1|P2|P3>
 status: DONE
 created: 2026-09-13
 updated: 2026-09-19
 owner: <prefix>-team
-adr_refs: [the project's decision records]
-prd_ref: <the project's PRD id>
+adr_refs: [<your-adr-001>, <your-adr-002>]
+prd_ref: <your-prd-id>
 wave: 5
 estimated_effort: 1w
 depends_on: []                       # see §Dependency declaration below
@@ -155,7 +155,7 @@ If the marker is present at session start, the recovery protocol reconciles.
 
 ## Cascade outbox protocol
 
-Per TKT-ORCH-012, every cascade action is enqueued to `orchestrator.outbox` in a single transaction. The consumer applies them idempotently. Crash between enqueue and apply is safe — the row stays unapplied until the next consumer run.
+Per the cascade convention established for the project, every cascade action is enqueued to `orchestrator.outbox` in a single transaction. The consumer applies them idempotently. Crash between enqueue and apply is safe — the row stays unapplied until the next consumer run.
 
 ## Sub-agent return schemas
 

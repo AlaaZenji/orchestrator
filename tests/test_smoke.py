@@ -210,22 +210,53 @@ def test_re_sync_is_idempotent(fresh_project):
 
 
 def test_no_project_specific_content_in_repo():
-    """The repo source tree must not contain any project-specific terms."""
+    """The repo source tree must not contain any project-specific terms.
+
+    Keep this list in lock-step with `.github/workflows/ci.yml`'s CI scrub.
+    If you add a term to one, add it to the other. The placeholder-phrase
+    entries below are LLM-anonymization artifacts (e.g., "the project's
+    decision records" replacing "ADR-0028"); they should NEVER appear in
+    runtime templates.
+    """
     repo_root = Path(__file__).parent.parent
     src_dir = repo_root / "src"
     forbidden = [
+        # Project / company / domain names
         "health_ai", "Astra", "clinical", "HL7", "FHIR", "MLLP",
-        "patient", "hospital", "CDS", "RCM", "TrakCare", "Waystar",
-        "Mirth", "Lebanon", "Bed Management", "Command Center",
+        "patient", "hospital", "CDS", "RCM", "EMR", "EHR", "HAPI",
+        "TrakCare", "Waystar", "Mirth", "InterSystems",
+        "Lebanon", "UAE", "MENA", "NSSF",
+        "Bed Management", "Command Center",
         "Slice #1", "slice-critique", "Wave 2.5", "PILOT-",
+        # Ticket-id prefixes that indicate leak from another project
+        "TKT-P[0-9]-", "TKT-ORCH-", "TKT-DEVEX-", "TKT-DEEP-",
+        # Specific ADR references (use generic decision-record refs instead)
+        "ADR-0014", "ADR-0017", "ADR-0022", "ADR-0028",
+        # LLM-anonymization placeholder artifacts (NEVER acceptable)
+        "the project's decision records",
+        "the project's domain decision support",
+        "the project's coding-standards",
+        "the project's primary backend",
+        "the project's tenant-isolation",
+        "the project's Justfile",
+        "the project's init-app-role",
+        "the project's decision support",
+        # Astra-named env vars
+        "ASTRA_DB_ROLE", "ASTRA_APP_PGPASSWORD", "ASTRA_DB_TENANT",
     ]
     found = []
     for f in src_dir.rglob("*"):
         if f.is_file() and f.suffix in (".py", ".md", ".sql"):
             text = f.read_text(errors="ignore")
             for term in forbidden:
-                if term in text:
-                    found.append((f.relative_to(repo_root), term))
+                # Support regex-shaped entries (contain [ or ^ or $)
+                import re as _re
+                if "[" in term or "^" in term or "$" in term:
+                    if _re.search(term, text):
+                        found.append((f.relative_to(repo_root), term))
+                else:
+                    if term in text:
+                        found.append((f.relative_to(repo_root), term))
     assert not found, f"Project-specific content found: {found}"
 
 

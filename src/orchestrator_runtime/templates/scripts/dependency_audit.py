@@ -1,7 +1,7 @@
 """Ticket dependency audit — first-class depends_on enforcement.
 
-Per TKT-NNN (2026-09-19): for every ticket whose frontmatter declares
-``status: QUEUED``, verify that the ticket either
+For every ticket whose frontmatter declares ``status: QUEUED``, verify
+that the ticket either
 
   (a) carries an explicit ``depends_on:`` frontmatter field listing ticket
       IDs, OR
@@ -10,16 +10,16 @@ Per TKT-NNN (2026-09-19): for every ticket whose frontmatter declares
       before any ``P0`` / ``P1`` ticket is filed.
 
 Tickets that satisfy neither (a) nor (b) are reported BLOCKED with the
-remediation hint. This closes the ``burn-queue §2`` silent-fallback gap that
-let cross-phase dependencies (e.g. TKT-NNN the project's primary backend depends on TKT-NNN
-Keycloak) ride the naive phase-ordering heuristic without explicit declaration.
+remediation hint. This closes the silent-fallback gap that lets
+cross-phase dependencies ride the naive phase-ordering heuristic without
+explicit declaration.
 
 CLI usage:
 
     # Audit a single ticket.
-    python3 orchestrator/scripts/dependency_audit.py TKT-NNN
-        -> "OK: TKT-NNN dependencies satisfied" (exit 0)
-        -> "BLOCKED: TKT-NNN missing depends_on declaration" (exit 1)
+    python3 orchestrator/scripts/dependency_audit.py TKT-EXAMPLE-NNN
+        -> "OK: TKT-EXAMPLE-NNN dependencies satisfied" (exit 0)
+        -> "BLOCKED: TKT-EXAMPLE-NNN missing depends_on declaration" (exit 1)
 
     # Audit every QUEUED ticket in the tree.
     python3 orchestrator/scripts/dependency_audit.py
@@ -284,7 +284,7 @@ def _format_summary(results: list[AuditResult]) -> str:
     ok = [r for r in results if r.is_ok]
     blocked = [r for r in results if not r.is_ok]
     lines: list[str] = [
-        "=== dependency_audit.py — TKT-NNN ===",
+        "=== dependency_audit.py — TKT-EXAMPLE-NNN ===",
         f"Scanned QUEUED tickets: {len(results)}",
         f"  OK:      {len(ok)}",
         f"  BLOCKED: {len(blocked)}",
@@ -310,7 +310,7 @@ def _build_parser() -> argparse.ArgumentParser:
         prog="dependency_audit.py",
         description=(
             "Audit ticket frontmatter for the depends_on: declaration. "
-            "Per TKT-NNN, every QUEUED ticket must either declare "
+            "Per TKT-EXAMPLE-NNN, every QUEUED ticket must either declare "
             "depends_on: or be in phase P0/P1."
         ),
     )
@@ -319,7 +319,7 @@ def _build_parser() -> argparse.ArgumentParser:
         nargs="?",
         default=None,
         help=(
-            "Specific ticket ID to audit (e.g. TKT-NNN). If omitted, "
+            "Specific ticket ID to audit (e.g. TKT-EXAMPLE-NNN). If omitted, "
             "every QUEUED ticket under orchestrator/tickets/ is scanned."
         ),
     )

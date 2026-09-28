@@ -719,21 +719,21 @@ def _safe_scope(verdict: dict) -> str:
 if __name__ == "__main__":
     import sys
 
-    # Layer 29 case (TKT-NNNb).
+    # Layer 29 case (illustrative).
     layer29_failure = {
         "verdict": "FAIL",
         "evidence": [
             {"file": "db/migrations/V001__init.sql", "line": 1, "note": "audit_outbox table not created"},
-            {"file": "services/the project's outbox-drainer/src/queries.py", "line": 7, "note": "no audit_outbox drainer"},
-            {"file": "the project's API service/cmd/main.go", "line": 159, "note": "idempotency middleware not mounted"},
+            {"file": "services/outbox-drainer/src/queries.py", "line": 7, "note": "no audit_outbox drainer"},
+            {"file": "api-service/cmd/main.go", "line": 159, "note": "idempotency middleware not mounted"},
         ],
         "follow_up_ticket_ids": [
-            "TKT-NNNb-FOUND-001",
-            "TKT-NNNb-FOUND-002",
-            "TKT-NNNb-FOUND-003",
+            "TKT-EXAMPLE-FOUND-001",
+            "TKT-EXAMPLE-FOUND-002",
+            "TKT-EXAMPLE-FOUND-003",
         ],
     }
-    ticket_scope = {"the project's API service/internal/audit/"}
+    ticket_scope = {"api-service/internal/audit/"}
     r = classify_verdict_failure(layer29_failure, ticket_scope=ticket_scope)
     print("Layer 29 case:", r.ok, r.chosen_resolution, r.message)
     print("  follow_up_ticket_ids:", r.follow_up_ticket_ids)
@@ -745,12 +745,12 @@ if __name__ == "__main__":
     impl_defect = {
         "verdict": "FAIL",
         "evidence": [
-            {"file": "the project's outbox-drainer service", "line": 117,
-             "note": "the project's outbox-append helper swallows ErrNoTenantID"},
+            {"file": "outbox-drainer service", "line": 117,
+             "note": "outbox-append helper swallows ErrNoTenantID"},
         ],
         # no follow_up_ticket_ids — call-site defect.
     }
-    ticket_scope2 = {"the project's API service/internal/audit/"}
+    ticket_scope2 = {"api-service/internal/audit/"}
     r2 = classify_verdict_failure(impl_defect, ticket_scope=ticket_scope2)
     print("Impl defect case:", r2.ok, r2.chosen_resolution, r2.message)
     if not r2.ok or r2.chosen_resolution != RESOLUTION_LOOP_UNTIL_PASS:

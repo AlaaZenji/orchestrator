@@ -6,8 +6,8 @@ via burn_queue.py but does NOT dispatch sub-agents to actually do the work.
 This module bridges that gap by:
 
   1. Reading CLAIMED tickets from burn-queue output + the lease table
-  2. Generating per-ticket worker prompts (TKT-ORCH-023 compliant:
-     ≥6 verifier sub-agents, distinct IDs, WORKER_RESULT schema enforced)
+  2. Generating per-ticket worker prompts with configurable verifier fan-out
+     (P0/P1 → ≥6 verifier sub-agents, distinct IDs, WORKER_RESULT schema enforced)
   3. Emitting a JSON manifest the orchestrator (Claude session) reads
   4. Emitting per-ticket worker-prompt text files for inline paste
 
@@ -17,7 +17,7 @@ itself (sub-agents require Agent tool which lives inside the Claude session).
 
 Usage:
     python3 -c "from orchestrator.scripts.dispatch import build_dispatch_plan;
-                print(build_dispatch_plan(['TKT-DEEP-XXX:123', 'TKT-DEEP-YYY:456']))"
+                print(build_dispatch_plan(['TKT-PROJECT-XXX:123', 'TKT-PROJECT-YYY:456']))"
 """
 from __future__ import annotations
 
@@ -76,7 +76,7 @@ def parse_lease_lines(burn_output: str) -> list[tuple[str, int]]:
 
 
 # ---------------------------------------------------------------------------
-# Worker prompt builder (TKT-ORCH-023 compliant)
+# Worker prompt builder (configurable verifier fan-out)
 # ---------------------------------------------------------------------------
 
 WORKER_PROMPT_HEADER = """## Ticket: {ticket_id}
@@ -84,20 +84,19 @@ WORKER_PROMPT_HEADER = """## Ticket: {ticket_id}
 ## Priority: {priority}
 ## File scope: {ticket_file}
 
-You are an Astra orchestrator worker dispatched via Agent tool (CLAUDE.md anti-stall #1: small scope).
+You are an orchestrator worker dispatched via Agent tool. Operate in a small, well-scoped burst.
 
 CRITICAL: do not read OTHER tickets. Burn this one ticket. Write files. Report. That's it.
 
-## Hard rules (CLAUDE.md + TKT-ORCH-023)
+## Hard rules
 
-1. **WRITE-FILES-FIRST** (anti-stall #2). Don't plan for hours — start implementing immediately.
-2. **Heartbeat every 3 tool calls** — write `orchestrator/progress/.heartbeat-{ticket_id}` file (anti-stall #3).
-3. **Small scope = 1 ticket per dispatch** (anti-stall #1). Do not read other tickets.
-4. **Verifier dispatch (TKT-ORCH-023 + CLAUDE.md change 2026-09-26)**: you MUST dispatch ≥{min_verifiers} distinct verifier sub-agents per the {priority} requirement (≥6 for P0/P1, ≥4 for P2/P3). **Self-attestation is FORBIDDEN.** If you genuinely cannot dispatch the required verifiers due to resource constraints, return `final_block: BLOCKED` with reason `verifier_dispatch_resource_constraint`.
-5. Per-tenant isolation (CLAUDE.md #2): `tenant_id NOT NULL` + RLS on every modification.
-6. Synthetic data only in dev (CLAUDE.md #3).
-7. CDS recommendations are advisory only, never autonomous (CLAUDE.md #4 + ADR-0006).
-8. Lease holds for 30 min — extend via heartbeat; release on completion.
+1. **WRITE-FILES-FIRST**. Don't plan for hours — start implementing immediately.
+2. **Heartbeat every 3 tool calls** — write `orchestrator/progress/.heartbeat-{ticket_id}` file.
+3. **Small scope = 1 ticket per dispatch**. Do not read other tickets.
+4. **Verifier dispatch**: you MUST dispatch ≥{min_verifiers} distinct verifier sub-agents per the {priority} requirement (≥6 for P0/P1, ≥4 for P2/P3). **Self-attestation is FORBIDDEN.** If you genuinely cannot dispatch the required verifiers due to resource constraints, return `final_block: BLOCKED` with reason `verifier_dispatch_resource_constraint`.
+5. Use only synthetic or fixture data for dev/test runs; never assume access to production credentials.
+6. Recommendations are advisory only, never autonomous: do not invoke irreversible actions without explicit human approval.
+7. Lease holds for 30 min — extend via heartbeat; release on completion.
 
 ## Required return: WORKER_RESULT JSON
 
@@ -138,8 +137,8 @@ Burn the ticket. Return WORKER_RESULT.
 def build_worker_prompt(ticket_id: str, lease_token: int, priority: str = "P0") -> str:
     """Render the worker dispatch prompt for a single ticket.
 
-    TKT-ORCH-023: P0/P1 → ≥6 verifiers, P2/P3 → ≥4. The orchestrator session
-    uses this to invoke Agent tool with the rendered prompt.
+    P0/P1 → ≥6 verifiers, P2/P3 → ≥4. The orchestrator session uses this to
+    invoke Agent tool with the rendered prompt.
     """
     min_verifiers = 6 if priority in ("P0", "P1") else 4
     ticket_path = _find_ticket_file(ticket_id)

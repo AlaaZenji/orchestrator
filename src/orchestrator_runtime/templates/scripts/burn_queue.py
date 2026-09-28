@@ -43,105 +43,6 @@ DEFAULT_TTL_MIN = 30
 MAX_PARALLEL = 6
 
 
-# ---------------------------------------------------------------------------
-# the project's domain decision support burn gate (the project's decision records §8.6 — TKT-NNN)
-# ---------------------------------------------------------------------------
-#
-# Per the project's decision records §8.6, the burn queue MUST consult `burn_gate.py` before
-# picking up a the project's domain decision support-class ticket. Exit codes:
-#   0 = PASS  — gate satisfied; proceed to claim
-#   1 = FAIL  — gate unsatisfied (artifacts missing); skip + log
-#   2 = INVALID — gate cannot decide (ticket unreadable); surface per §7 BLOCKED
-#   3 = NOT-the project's domain decision support — ticket is explicitly not the project's domain decision support-class; proceed unchanged
-#
-# Stdlib-only (matches burn_gate.py constraint). Reversible: delete the
-# call site in force_claim_ticket() to revert.
-# ---------------------------------------------------------------------------
-
-
-class CdsGateSkip(Exception):
-    """Raised when burn_gate returns FAIL (exit 1) or INVALID (exit 2).
-
-    Carries the exit code so the dispatcher can emit the correct log tag:
-      exit 1 → `[the project's domain decision support-GATE-FAIL]`  (skip; log missing artifact path)
-      exit 2 → `[the project's domain decision support-GATE-INVALID]`  (surface; BLOCKED escalation per the project's decision records §7)
-    """
-
-    def __init__(self, ticket_id: str, code: int, reason: str = ""):
-        super().__init__(reason or f"burn_gate exit {code} for {ticket_id}")
-        self.ticket_id = ticket_id
-        self.code = code
-        self.reason = reason
-
-    @property
-    def tag(self) -> str:
-        return "the project's domain decision support-GATE-FAIL" if self.code == 1 else "the project's domain decision support-GATE-INVALID"
-
-
-BURN_GATE_SCRIPT = ROOT / "orchestrator" / "scripts" / "burn_gate.py"
-
-
-def _cds_progress_log() -> Path:
-    """Path to today's burn-queue progress log.
-
-    Per the project's decision records §8.6 + the §7 BLOCKED escalation convention: write one row
-    per gate decision so the orchestrator can audit what was skipped.
-    """
-    name = f"{datetime.now(timezone.utc).strftime('%Y-%m-%d')}-burn-queue.md"
-    return PROGRESS / name
-
-
-def cds_burn_gate_check(ticket_id: str) -> int:
-    """Invoke `burn_gate.py --ticket=<id>` and append a decision row
-    to today's progress log.
-
-    Returns the script's exit code (0=PASS, 1=FAIL, 2=INVALID, 3=NOT-the project's domain decision support).
-    On FAIL or INVALID, the function logs `[the project's domain decision support-GATE-FAIL]` or
-    `[the project's domain decision support-GATE-INVALID]` to `progress/YYYY-MM-DD-burn-queue.md` before
-    returning, and the caller MUST skip the lease claim.
-    On PASS or NOT-the project's domain decision support, the caller proceeds to claim unchanged.
-
-    Never raises — every failure mode is swallowed so the burn queue
-    always reaches its own dispatch loop (per "no silent failures").
-    """
-    try:
-        result = subprocess.run(
-            ["python3", str(BURN_GATE_SCRIPT), f"--ticket={ticket_id}"],
-            capture_output=True, text=True, timeout=15,
-        )
-        rc = result.returncode
-    except subprocess.TimeoutExpired:
-        # Defensive: surface as INVALID with a timeout reason. Treat as
-        # gate-cannot-decide (BLOCKED escalation per §7).
-        rc = 2
-        result = None  # type: ignore[assignment]
-    except Exception:
-        # Defensive: if the gate script is missing entirely, surface as
-        # INVALID so the operator notices (rather than silently bypassing
-        # §8.6 enforcement).
-        rc = 2
-        result = None  # type: ignore[assignment]
-    # Fail-CLOSED (TKT-NNN FIX 1): any exit code outside the documented
-    # contract {0=PASS, 1=FAIL, 2=INVALID, 3=NOT-the project's domain decision support} is upgraded to INVALID
-    # (2) per the project's decision records §7 BLOCKED escalation. A buggy or compromised gate
-    # emitting rc=4 (or anything else) MUST NOT silently bypass §8.6
-    # enforcement. The orchestrator's default is deny, not permit.
-    if rc not in (0, 1, 2, 3):
-        rc = 2
-    if rc in (1, 2):
-        tag = "the project's domain decision support-GATE-FAIL" if rc == 1 else "the project's domain decision support-GATE-INVALID"
-        try:
-            PROGRESS.mkdir(parents=True, exist_ok=True)
-            with open(_cds_progress_log(), "a", encoding="utf-8") as f:
-                f.write(
-                    f"[{tag}] {ticket_id} — "
-                    f"{'artifacts missing (see burn_gate output)' if rc == 1 else 'gate cannot make decision (BLOCKED per §7)'}\n"
-                )
-        except Exception:
-            pass
-    return rc
-
-
 def read_ticket_status(ticket_path: Path) -> str:
     """Read the frontmatter `status:` field from a ticket file."""
     try:
@@ -157,12 +58,12 @@ def read_ticket_status(ticket_path: Path) -> str:
 def read_ticket_id(ticket_path: Path) -> str:
     """Read the frontmatter `id:` field from a ticket file.
 
-    Per Final Follow-Up Directive §5: ticket-id is the canonical key. The
-    file stem (e.g., `TKT-DEEP-LAUNCH-001-foundation.md`) is a routing slug —
-    not the canonical id. Using the file stem as the ticket id (the prior
-    default) caused `cds_burn_gate.py --ticket=<id>` lookups to fail for
-    tickets with filename suffixes beyond their id (e.g., `*FU2`,
-    `*populate-cohort-uuid`, `*foundation`). Use this function instead.
+    The `id:` frontmatter value is the canonical key. The file stem (e.g.,
+    `TKT-EXAMPLE-001-foundation.md`) is a routing slug — not the canonical
+    id. Using the file stem as the ticket id (a prior default) caused
+    pre-claim lookups to fail for tickets with filename suffixes beyond
+    their id (e.g., `*FU2`, `*populate-uuid`, `*foundation`). Use this
+    function instead.
 
     Falls back to the file stem only when no `id:` field is found in the
     first ~20 lines (legacy tickets from early bootstrapping).
@@ -213,48 +114,27 @@ def list_burnable(priority=None, limit=None) -> list:
 
 
 def reap_stale_leases():
-    """Reap ALL stale leases (called automatically before each batch)."""
+    """Reap ALL stale leases (called automatically before each batch).
+
+    Delegates to ``lease.reap_stale()`` for the actual DB I/O. If the
+    module is not importable (state-store=skip), this is a no-op.
+    """
     try:
-        subprocess.run(
-            ["python3", "-c", '''
-import sys, os, subprocess
-from datetime import datetime, timezone, timedelta
-sys.path.insert(0, "<project_root>")
-from orchestrator.scripts.lease import read_lease
-import psycopg2
-import os
-os.environ["ASTRA_DB_TENANT"] = "00000000-0000-0000-0000-000000000001"
-conn = psycopg2.connect(host=os.environ.get("ORCHESTRATOR_DB_HOST", "localhost"), port=int(os.environ.get("ORCHESTRATOR_DB_PORT", "5432")), dbname=os.environ.get("ORCHESTRATOR_DB_NAME", "orchestrator"), user=os.environ.get("ORCHESTRATOR_DB_USER", "orchestrator_app"), password=os.environ.get("ORCHESTRATOR_DB_PASSWORD", ""))
-conn.autocommit = True
-cur = conn.cursor()
-cur.execute("SET ROLE orchestrator")
-future_cutoff = datetime.now(timezone.utc) + timedelta(days=7)
-cur.execute("DELETE FROM orchestrator.lease WHERE lease_expires_at < %s", (future_cutoff,))
-deleted = cur.rowcount
-cur.execute("RESET ROLE")
-print(f"Reaped {deleted} stale lease(s)")
-'''],
-            capture_output=True, text=True, timeout=15,
-        )
+        sys.path.insert(0, str(ROOT / "orchestrator" / "scripts"))
+        from lease import reap_stale  # type: ignore[import-not-found]
+        reap_stale()
     except Exception:
+        # State-store=skip, missing psycopg, or DB unreachable — never
+        # block the burn queue on the reaper.
         pass
 
 
 def force_claim_ticket(ticket_id: str, holder: str, ttl_min: int) -> int:
     """Force-claim a ticket via subprocess. Returns fencing_token or raises.
 
-    Wired with the project's domain decision support burn gate (the project's decision records §8.6 — TKT-NNN):
-    - For every ticket, `burn_gate.py --ticket=<id>` is invoked FIRST.
-    - Exit 0 (PASS) or 3 (NOT-the project's domain decision support): proceed to the atomic lease claim.
-    - Exit 1 (FAIL): raise CdsGateSkip(..., code=1) — log appended, lease NOT claimed.
-    - Exit 2 (INVALID): raise CdsGateSkip(..., code=2) — BLOCKED escalation per §7.
-    Non-the project's domain decision support tickets return NOT-the project's domain decision support and proceed unchanged (per-tenant discipline
-    preserved: CLAUDE.md #2 — the integration is the project's domain decision support-scope only).
+    The atomic lease claim lives in ``force_claim.py``; this wrapper just
+    invokes it and parses the fencing token out of stdout.
     """
-    gate_rc = cds_burn_gate_check(ticket_id)
-    if gate_rc in (1, 2):
-        reason = "artifacts missing" if gate_rc == 1 else "gate cannot decide"
-        raise CdsGateSkip(ticket_id, code=gate_rc, reason=reason)
     result = subprocess.run(
         ["python3", str(ROOT / "orchestrator" / "scripts" / "force_claim.py"),
          ticket_id, holder, str(ttl_min)],
@@ -362,16 +242,11 @@ def main():
 
     for ticket_path in burnable[:args.limit]:
         # Use canonical id from frontmatter, not the file stem
-        # (per TKT-DEEP-LAUNCH-* routing slugs like `-foundation`)
+        # (per the `<ticket-id>-<slug>` convention — e.g. `-foundation`).
         ticket_id = read_ticket_id(ticket_path)
         try:
             fencing_token = force_claim_ticket(ticket_id, args.holder, args.ttl_min)
             dispatched.append((ticket_id, fencing_token))
-        except CdsGateSkip as e:
-            # the project's decision records §8.6 — the project's domain decision support burn gate returned FAIL or INVALID; skip the
-            # ticket (no lease claim attempted). The decision row is already
-            # appended to progress/<today>-burn-queue.md inside cds_burn_gate_check.
-            print(f"  ⚠️ [{e.tag}] {ticket_id}: {e.reason} — SKIPPED (no claim)")
         except Exception as e:
             print(f"  ⚠️ force_claim failed for {ticket_id}: {str(e)[:80]}")
 

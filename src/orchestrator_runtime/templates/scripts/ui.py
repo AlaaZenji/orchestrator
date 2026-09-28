@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Terminal UI renderer for the Astra burn-queue orchestrator.
+"""Terminal UI renderer for the burn-queue orchestrator.
 
 ANSI-escape codes are used sparingly so output reads cleanly on both light
 and dark terminals. Box-drawing characters are stdlib (no Unicode fancy).
@@ -125,8 +125,8 @@ def stage_panel(
 
     Args:
         claim_rows: list of (ticket_id, percent_or_status_emoji, label)
-                    examples: ("TKT-DEEP-LAUNCH-001", "████████░░ 80%", "in progress")
-                              ("TKT-DEEP-CDS-005",      "██████████ DONE", "completed")
+                    examples: ("TKT-PROJECT-LAUNCH-001", "████████░░ 80%", "in progress")
+                              ("TKT-PROJECT-EXAMPLE-005",  "██████████ DONE", "completed")
         skip_rows:  list of (ticket_id, "reason", "auto-filed-TICKET-ID")
     """
     w = terminal_width()

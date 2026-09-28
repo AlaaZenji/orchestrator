@@ -5,7 +5,7 @@ Stage 1: Run burn_queue until no new tickets claim (drain the queue).
 Stage 2: Detect bottlenecks from Stage 1 output + leases + drift tickets;
          auto-file resolution tickets.
 Stage 3 (NEW): Build the worker auto-dispatch plan — generate per-ticket
-         TKT-ORCH-023 compliant worker prompts + JSON manifest. The
+         configurable verifier-fan-out worker prompts + JSON manifest. The
          orchestrator (Claude session) reads .dispatch/dispatch-manifest.json
          and fires Agent tool calls in parallel up to MAX_PARALLEL.
 

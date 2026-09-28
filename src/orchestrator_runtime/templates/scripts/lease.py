@@ -1,4 +1,4 @@
-"""Postgres-backed monotonic fencing-token lease (TKT-NNN).
+"""Postgres-backed monotonic fencing-token lease.
 
 The orchestrator's distributed coordination primitive (per
 ``orchestrator/CONVENTIONS.md §Ticket lease lock`` + Kleppmann 2016,
@@ -24,9 +24,9 @@ Public API (the four operations every caller needs):
       the supplied ``fencing_token`` is still the current maximum.
       Returns the new token. Raises :class:`StaleFencingTokenError` if
       a heartbeat / claim has since advanced past the supplied token.
-      ``tenant_id`` is required because AC #2 mandates the
-      ``app.current_tenant`` GUC be set BEFORE every query (the RLS
-      policy would otherwise hide the row from the orchestrator_app role),
+      ``tenant_id`` is required because the RLS policy mandates the
+      ``app.current_tenant`` GUC be set BEFORE every query (the policy
+      would otherwise hide the row from the ``orchestrator_app`` role),
       and the only way to know which tenant owns the row without a
       prior read is to accept it from the caller.
 
@@ -38,16 +38,16 @@ Public API (the four operations every caller needs):
 
     * ``read_lease(ticket_id, tenant_id) -> dict | None``
       — read-only convenience for the markdown-cache mirror described
-      in AC #3. Returns the row as a dict, or ``None`` when no live
-      lease exists for the given ticket. Sets the
-      ``app.current_tenant`` GUC before the query (per AC #2).
+      in ``CONVENTIONS.md``. Returns the row as a dict, or ``None`` when
+      no live lease exists for the given ticket. Sets the
+      ``app.current_tenant`` GUC before the query.
 
     * ``reap_stale(now) -> int``
       — deletes every lease whose ``lease_expires_at < now``. Returns
       the count of rows deleted. Safe to run on a cron; idempotent.
 
 The module sets the ``app.current_tenant`` GUC on every connection
-BEFORE any query (per the project's decision records + ``the project's tenant-isolation config``). The
+BEFORE any query (per the tenant-isolation RLS policy). The
 RLS policy on ``orchestrator.lease`` uses the canonical NULLIF form
 (``tenant_id = NULLIF(current_setting('app.current_tenant', true),
 '')::uuid``) — the GUC MUST be set in the same transaction as the
@@ -55,26 +55,24 @@ query, otherwise the policy returns zero rows. The module uses
 ``SET LOCAL`` (scoped to the transaction) so the value cannot leak
 across connection-pool checkouts.
 
-Stdlib only — uses :mod:`psycopg` 3.x which the project's Justfile
-already pins (``the project's coding-standards doc`` + the
-``psycopg[binary]`` driver already imported by ``tools/demo/``). All
-DB I/O happens via the existing ``orchestrator_app`` least-privileged role
-(per the project's decision records — ``orchestrator`` is superuser with BYPASSRLS, which would
-defeat RLS testing).
+Stdlib only — uses :mod:`psycopg` 3.x as the canonical Postgres driver
+for Python 3.10+. All DB I/O happens via the existing
+``orchestrator_app`` least-privileged role — never as ``orchestrator``,
+which is the superuser role (has BYPASSRLS, which defeats RLS testing).
 
-Synthetic test data only (CLAUDE.md #3): no real tenant IDs, no real
-ticket IDs. The module's tests (``tests/orchestrator/test_lease.py``)
-use UUIDs from ``uuid.uuid5`` over a synthetic namespace.
+Synthetic test data only: no real tenant IDs, no real
+ticket IDs. The module's tests use UUIDs from ``uuid.uuid5`` over a
+synthetic namespace.
 
 Typical usage:
 
     from orchestrator.scripts.lease import claim, heartbeat, release
 
-    token = claim("TKT-NNN", tenant_id, "agent-A", ttl_minutes=15)
+    token = claim("TKT-EXAMPLE-001", tenant_id, "agent-A", ttl_minutes=15)
     # ... do work ...
-    token = heartbeat("TKT-NNN", "agent-A", token, ttl_minutes=15)
+    token = heartbeat("TKT-EXAMPLE-001", "agent-A", token, ttl_minutes=15)
     # ... more work ...
-    release("TKT-NNN", "agent-A", token)
+    release("TKT-EXAMPLE-001", "agent-A", token)
 
 Environment:
 
@@ -82,11 +80,15 @@ Environment:
                         unset, the module falls back to the laptop-
                         staging default ``postgresql://orchestrator@localhost:${ORCHESTRATOR_DB_PORT:-5432}/orchestrator``. CI / cloud set this explicitly.
 
-    ``ASTRA_DB_ROLE``  — Postgres role to connect as. Defaults to
-                        ``orchestrator_app`` (the least-privileged role per
-                        the project's decision records). Set to ``orchestrator`` only for ops
-                        recovery; the module's RLS tests assume
-                        ``orchestrator_app``.
+    ``ORCHESTRATOR_DB_ROLE`` — Postgres role to connect as. Defaults to
+                        ``orchestrator_app`` (the least-privileged role).
+                        Set to ``orchestrator`` only for ops recovery;
+                        the module's RLS tests assume ``orchestrator_app``.
+
+    ``ORCHESTRATOR_APP_PGPASSWORD`` — Password for the
+                        ``ORCHESTRATOR_DB_ROLE`` user. CI / cloud set this
+                        explicitly; the local dev fallback is
+                        ``orchestrator_app_dev``.
 """
 
 from __future__ import annotations
@@ -95,10 +97,10 @@ import os
 from datetime import datetime, timedelta, timezone
 from typing import Final
 
-# psycopg 3.x is the canonical Python driver for Postgres 16+ per CLAUDE.md
-# + the project's coding-standards. Imported lazily at the call sites so the
-# module loads even when DATABASE_URL is unset (the unit-test lane skips
-# integration tests via the canonical pytest.skipif guard).
+# psycopg 3.x is the canonical Python driver for Postgres 16+.
+# Imported lazily at the call sites so the module loads even when
+# DATABASE_URL is unset (the unit-test lane skips integration tests via
+# the canonical pytest.skipif guard).
 psycopg = None  # type: ignore[assignment]  # populated on first DB-touching call
 
 
@@ -106,20 +108,19 @@ psycopg = None  # type: ignore[assignment]  # populated on first DB-touching cal
 # Constants
 # ---------------------------------------------------------------------------
 
-#: Default database DSN when ``DATABASE_URL`` is unset. Matches the
-#: laptop-staging bootstrap (memory: ``laptop-staging-bootstrap.md``,
-#: Postgres on port int(os.environ.get("ORCHESTRATOR_DB_PORT", "5432")), auth ``trust`` on localhost).
+#: Default database DSN when ``DATABASE_URL`` is unset. Targets a local
+#: Postgres on ``ORCHESTRATOR_DB_PORT`` (default 5432) with ``trust`` auth
+#: on localhost — the standard laptop-staging layout.
 _DEFAULT_DSN: Final[str] = "postgresql://orchestrator@localhost:${ORCHESTRATOR_DB_PORT:-5432}/orchestrator"
 
-#: Default Postgres role. The least-privileged ``orchestrator_app`` role per
-#: the project's decision records — every code path that touches domain-specific/audit/orchestrator
-#: tables MUST be exercised as ``orchestrator_app``, never as ``orchestrator``
-#: (which is superuser with BYPASSRLS, defeating RLS testing).
+#: Default Postgres role. The least-privileged ``orchestrator_app`` role —
+#: every code path that touches tenant-scoped tables MUST be exercised as
+#: ``orchestrator_app``, never as ``orchestrator`` (which is superuser
+#: with BYPASSRLS, defeating RLS testing).
 _DEFAULT_DB_ROLE: Final[str] = "orchestrator_app"
 
-#: Default role password. Matches the local dev password set in
-#: ``tools/scripts/the project's init-app-role recipe.sh`` (``orchestrator_app_dev``). CI sets
-#: ``ASTRA_APP_PGPASSWORD`` explicitly.
+#: Default role password for the local dev ``orchestrator_app`` user.
+#: CI / cloud set ``ORCHESTRATOR_APP_PGPASSWORD`` explicitly.
 _DEFAULT_DB_PASSWORD: Final[str] = "orchestrator_app_dev"
 
 #: Maximum permitted TTL in minutes. Mirrors the ``CONVENTIONS.md
@@ -222,14 +223,14 @@ def _connect():  # pragma: no cover - thin wrapper, exercised via integration te
     """Open a psycopg connection as the least-privileged ``orchestrator_app`` role.
 
     Resolves the DSN from ``DATABASE_URL`` (falls back to the laptop-
-    staging default on port int(os.environ.get("ORCHESTRATOR_DB_PORT", "5432"))). The connection is opened with
-    explicit ``user`` + ``password`` kwargs so we connect AS
+    staging default on port ``ORCHESTRATOR_DB_PORT``). The connection is
+    opened with explicit ``user`` + ``password`` kwargs so we connect AS
     ``orchestrator_app`` directly — psycopg authenticates once, the session
     is in the role from the start, and ``SET ROLE`` is unnecessary.
 
-    Per the project's decision records, ``orchestrator_app`` has no superuser + no BYPASSRLS, so
-    RLS evaluates on every query (the test for the ``LEASED_ERROR`` /
-    cross-tenant paths assumes this).
+    ``orchestrator_app`` has no superuser privilege and no BYPASSRLS, so
+    RLS evaluates on every query (the cross-tenant isolation tests
+    assume this).
 
     The caller is responsible for the transaction lifecycle (use
     ``with conn:`` or explicit ``conn.commit()`` / ``conn.rollback()``).
@@ -241,17 +242,17 @@ def _connect():  # pragma: no cover - thin wrapper, exercised via integration te
         psycopg = _psycopg  # type: ignore[assignment]
 
     base_dsn = os.environ.get("DATABASE_URL", _DEFAULT_DSN)
-    role = os.environ.get("ASTRA_DB_ROLE", _DEFAULT_DB_ROLE)
-    # Local dev password matches ``the project's init-app-role recipe.sh``; CI sets
-    # ``ASTRA_APP_PGPASSWORD`` explicitly. The ``orchestrator`` superuser
-    # DSN (no password on trust) still works because we pass
+    role = os.environ.get("ORCHESTRATOR_DB_ROLE", _DEFAULT_DB_ROLE)
+    # Local dev password defaults to ``orchestrator_app_dev``; CI / cloud
+    # set ``ORCHESTRATOR_APP_PGPASSWORD`` explicitly. The ``orchestrator``
+    # superuser DSN (no password on trust) still works because we pass
     # ``user=role, password=password`` — psycopg replaces the
     # connection's role before sending the startup packet.
-    password = os.environ.get("ASTRA_APP_PGPASSWORD", _DEFAULT_DB_PASSWORD)
+    password = os.environ.get("ORCHESTRATOR_APP_PGPASSWORD", _DEFAULT_DB_PASSWORD)
 
     # ``autocommit=False`` so every operation is in one transaction
     # and ``SET LOCAL app.current_tenant`` scopes the GUC to that
-    # transaction (per coding-standards §3.4).
+    # transaction (the GUC cannot leak across connection-pool checkouts).
     conn = psycopg.connect(  # type: ignore[arg-type]
         base_dsn,
         autocommit=False,
@@ -264,10 +265,10 @@ def _connect():  # pragma: no cover - thin wrapper, exercised via integration te
 def _set_tenant(conn, tenant_id: str) -> None:
     """Set ``app.current_tenant`` on the current transaction.
 
-    Uses ``SET LOCAL`` so the value cannot leak across connection-
-    pool checkouts (per coding-standards §3.4). The value MUST be set
-    in the same transaction as the query that depends on it (RLS is
-    evaluated at query time, not at session start).
+    Uses ``SET LOCAL`` so the value cannot leak across connection-pool
+    checkouts. The value MUST be set in the same transaction as the query
+    that depends on it (RLS is evaluated at query time, not at session
+    start).
     """
     with conn.cursor() as cur:
         cur.execute(
@@ -285,11 +286,11 @@ def claim(
     """Atomic lease claim — Kleppmann monotonic fencing token.
 
     Args:
-        ticket_id: The ticket to claim (e.g., ``"TKT-NNN"``).
+        ticket_id: The ticket to claim (e.g., ``"TKT-EXAMPLE-001"``).
         tenant_id: The caller's tenant UUID (string form, parsed by
             Postgres ``::uuid`` cast in the RLS policy).
         holder_id: The agent ID of the caller (e.g.,
-            ``"worker-TKT-NNN"``). Stored verbatim.
+            ``"worker-TKT-EXAMPLE-001"``). Stored verbatim.
         ttl_minutes: How long the lease is valid. Clamped to
             [_MIN_TTL_MINUTES, _MAX_TTL_MINUTES] per
             ``CONVENTIONS.md §Auto-derived lease_ttl_minutes``.
@@ -610,8 +611,7 @@ def reap_stale(now: datetime | None = None) -> int:
     operation that runs as a privileged caller and cleans up every
     tenant's stale leases in one sweep. (The RLS policy still applies;
     if the connection is ``orchestrator_app``, the reaper sees only its own
-    tenant's stale leases. For a global sweep, connect as ``orchestrator``
-    — see ``tools/scripts/the project's init-app-role recipe.sh`` for the role hierarchy.)
+    tenant's stale leases. For a global sweep, connect as ``orchestrator``.)
 
     Args:
         now: The cutoff timestamp. Defaults to ``datetime.now(UTC)``.
@@ -629,12 +629,12 @@ def reap_stale(now: datetime | None = None) -> int:
         # tenant). For the least-privileged ``orchestrator_app`` role, RLS
         # means we only see the caller's own tenant's stale leases —
         # the cron job is expected to run with the per-tenant
-        # ``ASTRA_DB_TENANT`` env var set, OR to be invoked as
+        # ``ORCHESTRATOR_DB_TENANT`` env var set, OR to be invoked as
         # ``orchestrator`` for the platform-wide sweep. Without setting the
         # GUC, RLS returns zero rows (defense in depth — the reaper
         # will be a no-op rather than a cross-tenant data leak).
-        if "ASTRA_DB_TENANT" in os.environ:
-            _set_tenant(conn, os.environ["ASTRA_DB_TENANT"])
+        if "ORCHESTRATOR_DB_TENANT" in os.environ:
+            _set_tenant(conn, os.environ["ORCHESTRATOR_DB_TENANT"])
         else:
             # Explicit clear so we don't inherit a stale GUC from a
             # previous test in the same session. RLS will return zero
