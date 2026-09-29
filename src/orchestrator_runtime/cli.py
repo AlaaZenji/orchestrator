@@ -135,7 +135,7 @@ def cmd_init(args):
         copied = _copy_tree(scripts_src, scripts_dst, suffix=".py")
         result["files_written"].extend(copied)
     elif args.mode in ("re-sync", "upgrade"):
-        copied = _copy_tree(scripts_src, scripts_dst, suffix=".py")
+        copied = _copy_tree(scripts_src, scripts_dst, suffix=".py", overwrite=True)
         result["files_written"].extend([f for f in copied if not f.endswith("(skipped)")])
     if args.mode == "upgrade":
         version_file = target / "orchestrator" / ".engine-version"
@@ -146,7 +146,10 @@ def cmd_init(args):
     prompts_src = templates_dir / "prompts"
     prompts_dst = target / "orchestrator" / "prompts"
     if prompts_src.exists():
-        copied = _copy_tree(prompts_src, prompts_dst, suffix=".md")
+        copy_kwargs = {"suffix": ".md"}
+        if args.mode in ("re-sync", "upgrade"):
+            copy_kwargs["overwrite"] = True
+        copied = _copy_tree(prompts_src, prompts_dst, **copy_kwargs)
         result["files_written"].extend(copied)
 
     # 4. Write CLAUDE.md (only if install mode and not present)
@@ -307,7 +310,20 @@ def install_setup_slash_command() -> Optional[str]:
 
 # --- Helpers ----------------------------------------------------------------
 
-def _copy_tree(src: Path, dst: Path, suffix: Optional[str] = None) -> List[str]:
+def _copy_tree(
+    src: Path,
+    dst: Path,
+    suffix: Optional[str] = None,
+    overwrite: bool = False,
+) -> List[str]:
+    """Copy files from ``src`` to ``dst``.
+
+    If ``overwrite`` is False (default), files that already exist in ``dst``
+    are skipped — this preserves user customizations during install.
+    If ``overwrite`` is True (used by re-sync/upgrade modes), existing files
+    are overwritten so that engine updates propagate to bootstrapped projects
+    (TKT-ORCH-FIX-STATE-SYNC-CROSS-PROJECT, 2026-09-29).
+    """
     written = []
     if not src.exists():
         return written
@@ -319,7 +335,7 @@ def _copy_tree(src: Path, dst: Path, suffix: Optional[str] = None) -> List[str]:
             continue
         rel = src_file.relative_to(src)
         dst_file = dst / rel
-        if dst_file.exists():
+        if dst_file.exists() and not overwrite:
             continue
         dst_file.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy(src_file, dst_file)
