@@ -38,6 +38,43 @@ For P0/P1 tickets where work is self-evident:
 - Skip reversibility + failure_modes verifiers (covered by inline self-verify)
 - Saves ~5 min/ticket
 
+## ⚠️⚠️⚠️ STATE-SYNC (TKT-ORCH-FIX-STATE-SYNC, 2026-09-29) ⚠️⚠️⚠️
+**Skipping this step leaves `tickets-index.md` stale.** The orchestrator
+relies on auto-reconcile to keep the index in lock-step with your
+frontmatter changes. If you skip it, your work shows up correctly on disk
+but the human-readable index still shows the pre-burn snapshot.
+
+**REQUIRED — as your LAST action before returning WORKER_RESULT:**
+```bash
+python3 orchestrator/scripts/lease.py release-with-reconcile \
+    <TICKET_ID> <tenant-uuid> <holder_id> <fencing_token> \
+    --worker-result orchestrator/progress/<TICKET_ID>-WORKER-RESULT.json \
+    --previous-status QUEUED \
+    --new-status DONE
+```
+
+This:
+1. Releases your lease (Postgres DELETE — atomic).
+2. Appends one JSONL event to `orchestrator/progress/.reconcile_events.jsonl`.
+3. Triggers `auto_reconcile.py --incremental` (debounced ≤ 2 s).
+4. The reconciler appends a cascade delta row to `tickets-index.md`.
+
+**Reconcile failures NEVER break your lease release** — they are
+forensic, not blocking. But the no-op case (forgetting this step)
+leaves drift. Always call it.
+
+If for any reason you can't call the CLI (e.g., Python unavailable),
+call the Python API directly:
+```python
+from orchestrator.scripts.lease import release_with_reconcile
+release_with_reconcile(
+    "<TICKET_ID>", "<tenant-uuid>", "<holder_id>", <fencing_token>,
+    worker_result_path="orchestrator/progress/<TICKET_ID>-WORKER-RESULT.json",
+    previous_status="QUEUED",
+    new_status="DONE",
+)
+```
+
 ## Lease info
 - picked_up_by: <orchestrator>
 - lease_expires_at: <ISO>
