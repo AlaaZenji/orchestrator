@@ -6,6 +6,11 @@ import sys
 from pathlib import Path
 from typing import Optional
 
+# Ensure src/ is on sys.path when invoked directly as a script
+_SRC_DIR = Path(__file__).resolve().parent.parent.parent
+if str(_SRC_DIR) not in sys.path:
+    sys.path.insert(0, str(_SRC_DIR))
+
 from orchestrator.domain.models import Work, ActorContext
 from orchestrator.domain.status import ActorRole
 from orchestrator.storage.sqlite import SQLiteStorageBackend
