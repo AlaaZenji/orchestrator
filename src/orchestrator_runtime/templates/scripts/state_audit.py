@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """state_audit.py — Continuous state-consistency auditor.
 
-TKT-ORCH-FIX-STATE-CONSISTENCY (2026-09-29). Compares the canonical
+TKT-CORE-FIX-STATE-CONSISTENCY (2026-09-29). Compares the canonical
 ticket frontmatter against every derived state (live leases,
 WORKER_RESULT.json, heartbeats) and emits drift findings.
 

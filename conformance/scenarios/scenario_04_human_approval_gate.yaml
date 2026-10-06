@@ -1,0 +1,36 @@
+scenario: "human-approval-gate"
+description: "Work awaiting approval cannot be approved by an agent worker; only human operator can approve."
+steps:
+  - action: "create_work"
+    params:
+      work_id: "APPR-01"
+      title: "Production Schema Change"
+    expect:
+      status: "ELIGIBLE"
+
+  - action: "claim_work"
+    params:
+      work_id: "APPR-01"
+      worker_id: "worker-1"
+    expect:
+      status: "RUNNING"
+
+  - action: "request_approval"
+    params:
+      work_id: "APPR-01"
+      reason: "High risk schema change"
+    expect:
+      status: "AWAITING_APPROVAL"
+
+  - action: "attempt_agent_self_approval"
+    params:
+      work_id: "APPR-01"
+      actor_id: "worker-1"
+    expect_error: "UNAUTHORIZED_TRANSITION"
+
+  - action: "human_approve"
+    params:
+      work_id: "APPR-01"
+      actor_id: "operator-alice"
+    expect:
+      status: "RUNNING"

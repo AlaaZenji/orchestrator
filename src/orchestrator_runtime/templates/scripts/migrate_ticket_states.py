@@ -207,7 +207,7 @@ def migrate_file(path: pathlib.Path, apply: bool,
                  backup_dir: Optional[pathlib.Path]) -> FileReport:
     """Migrate one ticket file. Returns a report describing the action.
 
-    TKT-ORCH-FIX-STATE-CONSISTENCY (2026-09-29): when applying, this
+    TKT-CORE-FIX-STATE-CONSISTENCY (2026-09-29): when applying, this
     delegates the status write to ``state.commit()`` so the reconcile
     queue + audit log are kept in sync with the frontmatter change.
     """
@@ -247,7 +247,7 @@ def migrate_file(path: pathlib.Path, apply: bool,
         backup_path.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(path, backup_path)
 
-    # TKT-ORCH-FIX-STATE-CONSISTENCY: route the mutation through the
+    # TKT-CORE-FIX-STATE-CONSISTENCY: route the mutation through the
     # state.commit chokepoint so the reconcile queue + audit log stay
     # in sync. force=True because migration is an admin override
     # (cross-state-machine transitions may be needed for legacy states).

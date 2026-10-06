@@ -3,15 +3,15 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "orchestrator-runtime"
+name = "orchestrator-platform"
 version = "0.1.0"
-description = "Project-agnostic orchestrator engine — burn queue, lease, heartbeat, watchdog, outbox, slash commands. Make any project's AI agent faster."
+description = "Durable AI Agent Orchestration Platform — Production Reference Implementation"
 readme = "README.md"
 license = { text = "MIT" }
 authors = [
     { name = "AlaaZenji", email = "alaa.zingi.2004@gmail.com" },
 ]
-keywords = ["orchestrator", "ai-agent", "burn-queue", "lease", "outbox", "ticketing", "automation"]
+keywords = ["orchestrator", "ai-agent", "durable-execution", "fencing", "leases", "mcp", "cloudevents", "opentelemetry"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -31,9 +31,10 @@ dependencies = []
 [project.optional-dependencies]
 postgres = ["psycopg2-binary>=2.9"]
 sqlite = []
-test = ["pytest>=7"]
+test = ["pytest>=7", "hypothesis>=6.0", "pyyaml>=6.0"]
 
 [project.scripts]
+orchestrator = "orchestrator.cli.main:main"
 orchestrator-setup = "orchestrator_runtime.cli:main"
 
 [project.urls]
@@ -53,3 +54,7 @@ where = ["src"]
     "templates/migrations/sqlite/*.sql",
     "global_slash_commands/*.md",
 ]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

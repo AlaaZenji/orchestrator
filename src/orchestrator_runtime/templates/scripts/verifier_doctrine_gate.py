@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Verifier Doctrine Gate — mechanical enforcement of TKT-ORCH-023 + TKT-DOCTRINE-001.
+"""Verifier Doctrine Gate — mechanical enforcement of TKT-CORE-023 + TKT-DOCTRINE-001.
 
 **Why this exists.**
 
-The doctrine precedence update (TKT-ORCH-023, 2026-09-26) made verifier dispatch
+The doctrine precedence update (TKT-CORE-023, 2026-09-26) made verifier dispatch
 UNCONDITIONAL for P0/P1 tickets (8 distinct sub-agent IDs, Set semantics,
 self-attestation FORBIDDEN). The validators exist at
 `orchestrator/scripts/verifier_provenance.py` but **nothing in the dispatch
@@ -624,7 +624,7 @@ def check_ticket(ticket_path: pathlib.Path, gate_deployment_date: str = "2026-09
 
     # 8. test_quality_metrics shape (only if tests_added non-empty).
     # Advisory only — the core gate is verifier dispatch (already covered by
-    # check #1). test_quality_metrics is a newer discipline (TKT-ORCH-TEST-
+    # check #1). test_quality_metrics is a newer discipline (TKT-CORE-TEST-
     # QUALITY-LENS-001, 2026-09-27) and many existing workers don't populate
     # it. Surface as INFO, don't block.
     check.test_quality_result = validate_test_quality_metrics(work_result)
@@ -658,7 +658,7 @@ def check_ticket(ticket_path: pathlib.Path, gate_deployment_date: str = "2026-09
 def downgrade_ticket(check: TicketDoctrineCheck) -> bool:
     """Atomically downgrade a DONE ticket to PARTIAL_WITH_FOLLOW_UPS.
 
-    TKT-ORCH-FIX-STATE-CONSISTENCY: delegates to ``state.commit()`` so
+    TKT-CORE-FIX-STATE-CONSISTENCY: delegates to ``state.commit()`` so
     the downgrade goes through the SINGLE chokepoint — atomic
     frontmatter write + reconcile event enqueue + audit log row.
 

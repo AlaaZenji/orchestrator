@@ -38,7 +38,7 @@ For P0/P1 tickets where work is self-evident:
 - Skip reversibility + failure_modes verifiers (covered by inline self-verify)
 - Saves ~5 min/ticket
 
-## ⚠️⚠️⚠️ STATE-SYNC (TKT-ORCH-FIX-STATE-SYNC, 2026-09-29) ⚠️⚠️⚠️
+## ⚠️⚠️⚠️ STATE-SYNC (TKT-CORE-FIX-STATE-SYNC, 2026-09-29) ⚠️⚠️⚠️
 **Skipping this step leaves `tickets-index.md` stale.** The orchestrator
 relies on auto-reconcile to keep the index in lock-step with your
 frontmatter changes. If you skip it, your work shows up correctly on disk

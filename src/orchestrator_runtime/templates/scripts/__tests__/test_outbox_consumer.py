@@ -1,6 +1,6 @@
 """Tests for outbox_consumer.py — the outbox consumer side of Step 6.
 
-TKT-ORCH-FIX-STATE-SYNC-OUTBOX-CONSUMER (2026-09-29).
+TKT-CORE-FIX-STATE-SYNC-OUTBOX-CONSUMER (2026-09-29).
 
 Coverage (per the task spec — at least 6 tests):
 

@@ -1,6 +1,6 @@
 """Test the --rebuild mode of auto_reconcile.py.
 
-TKT-ORCH-FIX-STATE-SYNC (2026-09-29): disaster-recovery primitive.
+TKT-CORE-FIX-STATE-SYNC (2026-09-29): disaster-recovery primitive.
 Walks every ticket frontmatter on disk and regenerates tickets-index.md
 at-a-glance row + cascade delta rows. Preserves any existing rich
 narrative rows (detected by lack of the <!-- cascade-row-auto --> marker).

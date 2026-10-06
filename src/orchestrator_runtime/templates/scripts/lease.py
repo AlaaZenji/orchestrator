@@ -1,4 +1,4 @@
-"""Postgres-backed monotonic fencing-token lease (TKT-ORCH-011).
+"""Postgres-backed monotonic fencing-token lease (TKT-CORE-011).
 
 The orchestrator's distributed coordination primitive (per
 ``orchestrator/CONVENTIONS.md §Ticket lease lock`` + Kleppmann 2016,
@@ -40,7 +40,7 @@ Public API (the four operations every caller needs):
       parity-mismatch diagnosis.
 
     * ``release_or_idempotent(ticket_id, tenant_id, holder_id,
-      fencing_token) -> str`` (TKT-ORCH-EVOLVE-LEASE-RELEASE-PARITY,
+      fencing_token) -> str`` (TKT-CORE-EVOLVE-LEASE-RELEASE-PARITY,
       2026-09-27) — idempotent release wrapper for worker-side post-
       cascade cleanup. Swallows :class:`LeaseNotFoundError` and
       :class:`StaleFencingTokenError` (returns ``"ok_no_op"``);
@@ -60,7 +60,7 @@ Public API (the four operations every caller needs):
       the count of rows deleted. Safe to run on a cron; idempotent.
 
     * ``check_migration_number_collision(ticket_id, tenant_id,
-      migration_number, ticket_lookup) -> None`` (TKT-DEEP-ONT-001-FU-2)
+      migration_number, ticket_lookup) -> None`` (TKT-SYS-ONT-001-FU-2)
       — pre-claim guard. Raises
       :class:`MigrationNumberCollisionError` if another live (non-
       expired) lease already holds a ticket whose frontmatter declares
@@ -72,7 +72,7 @@ Public API (the four operations every caller needs):
       ticket file is unreadable).
 
     * ``claim()`` accepts an optional ``migration_number: str | None``
-      kwarg (TKT-DEEP-ONT-001-FU-3). When supplied, the lease claim is
+      kwarg (TKT-SYS-ONT-001-FU-3). When supplied, the lease claim is
       followed by an atomic INSERT into ``orchestrator.migration_registry``
       (via :class:`orchestrator.scripts.migration_registry.MigrationRegistry`).
       The two operations are NOT in the same transaction by default —
@@ -96,7 +96,7 @@ query, otherwise the policy returns zero rows. The module uses
 ``SET LOCAL`` (scoped to the transaction) so the value cannot leak
 across connection-pool checkouts.
 
-Stdlib only — uses :mod:`psycopg` 3.x which the project's Justfile
+Stdlib only — uses :mod:`psycopg` 3.x which the Justfile
 already pins (``docs/04-engineering/coding-standards.md`` + the
 ``psycopg[binary]`` driver already imported by ``tools/demo/``). All
 DB I/O happens via the existing ``astra_app`` least-privileged role
@@ -112,13 +112,13 @@ Typical usage:
     from orchestrator.scripts.lease import claim, heartbeat, release
     from orchestrator.scripts.lease import release_or_idempotent  # worker cleanup
 
-    token = claim("TKT-P1-099", tenant_id, "agent-A", ttl_minutes=15)
+    token = claim("TKT-GEN-099", tenant_id, "agent-A", ttl_minutes=15)
     # ... do work ...
-    token = heartbeat("TKT-P1-099", "agent-A", token, ttl_minutes=15)
+    token = heartbeat("TKT-GEN-099", "agent-A", token, ttl_minutes=15)
     # ... more work ...
-    release("TKT-P1-099", "agent-A", token)
+    release("TKT-GEN-099", "agent-A", token)
 
-Migration-number pre-claim (TKT-DEEP-ONT-001-FU-2):
+Migration-number pre-claim (TKT-SYS-ONT-001-FU-2):
 
     from orchestrator.scripts.lease import (
         check_migration_number_collision,
@@ -146,7 +146,7 @@ Environment:
                         staging default ``postgresql://astra@localhost:
                         55432/astra``. CI / cloud set this explicitly.
 
-    ``ASTRA_DB_ROLE``  — Postgres role to connect as. Defaults to
+    ``ORCHESTRATOR_DB_ROLE``  — Postgres role to connect as. Defaults to
                         ``astra_app`` (the least-privileged role per
                         ADR-0008). Set to ``astra`` only for ops
                         recovery; the module's RLS tests assume
@@ -169,7 +169,7 @@ from pathlib import Path
 from typing import Callable, Final
 
 # psycopg 3.x is the canonical Python driver for Postgres 16+ per CLAUDE.md
-# + the project's coding-standards. Imported lazily at the call sites so the
+# + coding standards. Imported lazily at the call sites so the
 # module loads even when DATABASE_URL is unset (the unit-test lane skips
 # integration tests via the canonical pytest.skipif guard).
 psycopg = None  # type: ignore[assignment]  # populated on first DB-touching call
@@ -185,14 +185,14 @@ psycopg = None  # type: ignore[assignment]  # populated on first DB-touching cal
 _DEFAULT_DSN: Final[str] = "postgresql://astra@localhost:55432/astra"
 
 #: Default Postgres role. The least-privileged ``astra_app`` role per
-#: ADR-0008 — every code path that touches clinical/audit/orchestrator
+#: ADR-0008 — every code path that touches domain/audit/orchestrator
 #: tables MUST be exercised as ``astra_app``, never as ``astra``
 #: (which is superuser with BYPASSRLS, defeating RLS testing).
 _DEFAULT_DB_ROLE: Final[str] = "astra_app"
 
 #: Default role password. Matches the local dev password set in
 #: ``tools/scripts/init_app_role.sh`` (``astra_app_dev``). CI sets
-#: ``ASTRA_APP_PGPASSWORD`` explicitly.
+#: ``ORCHESTRATOR_DB_PASSWORD`` explicitly.
 _DEFAULT_DB_PASSWORD: Final[str] = "astra_app_dev"
 
 #: Maximum permitted TTL in minutes. Mirrors the ``CONVENTIONS.md
@@ -289,7 +289,7 @@ class LeaseNotFoundError(LeaseError):
 class MigrationNumberCollisionError(LeaseError):
     """Raised by :func:`check_migration_number_collision` when another
     live lease already holds a ticket whose frontmatter declares the
-    same Flyway V-number (TKT-DEEP-ONT-001-FU-2, FOUND-001).
+    same Flyway V-number (TKT-SYS-ONT-001-FU-2, FOUND-001).
 
     Flyway rejects duplicate V-numbers at apply time. Two concurrent
     burns both targeting V050 would race, and one would FAIL on apply.
@@ -356,13 +356,13 @@ def _connect():  # pragma: no cover - thin wrapper, exercised via integration te
         psycopg = _psycopg  # type: ignore[assignment]
 
     base_dsn = os.environ.get("DATABASE_URL", _DEFAULT_DSN)
-    role = os.environ.get("ASTRA_DB_ROLE", _DEFAULT_DB_ROLE)
+    role = os.environ.get("ORCHESTRATOR_DB_ROLE", _DEFAULT_DB_ROLE)
     # Local dev password matches ``init_app_role.sh``; CI sets
-    # ``ASTRA_APP_PGPASSWORD`` explicitly. The ``astra`` superuser
+    # ``ORCHESTRATOR_DB_PASSWORD`` explicitly. The ``astra`` superuser
     # DSN (no password on trust) still works because we pass
     # ``user=role, password=password`` — psycopg replaces the
     # connection's role before sending the startup packet.
-    password = os.environ.get("ASTRA_APP_PGPASSWORD", _DEFAULT_DB_PASSWORD)
+    password = os.environ.get("ORCHESTRATOR_DB_PASSWORD", _DEFAULT_DB_PASSWORD)
 
     # ``autocommit=False`` so every operation is in one transaction
     # and ``SET LOCAL app.current_tenant`` scopes the GUC to that
@@ -402,16 +402,16 @@ def claim(
     """Atomic lease claim — Kleppmann monotonic fencing token.
 
     Args:
-        ticket_id: The ticket to claim (e.g., ``"TKT-P1-099"``).
+        ticket_id: The ticket to claim (e.g., ``"TKT-GEN-099"``).
         tenant_id: The caller's tenant UUID (string form, parsed by
             Postgres ``::uuid`` cast in the RLS policy).
         holder_id: The agent ID of the caller (e.g.,
-            ``"worker-TKT-ORCH-011"``). Stored verbatim.
+            ``"worker-TKT-CORE-011"``). Stored verbatim.
         ttl_minutes: How long the lease is valid. Clamped to
             [_MIN_TTL_MINUTES, _MAX_TTL_MINUTES] per
             ``CONVENTIONS.md §Auto-derived lease_ttl_minutes``.
         migration_number: Optional V-number reservation
-            (TKT-DEEP-ONT-001-FU-3, AC #5). When supplied, the lease
+            (TKT-SYS-ONT-001-FU-3, AC #5). When supplied, the lease
             INSERT is followed by an atomic INSERT into
             ``orchestrator.migration_registry`` via
             :class:`orchestrator.scripts.migration_registry.MigrationRegistry`.
@@ -436,7 +436,7 @@ def claim(
             been released as a compensating action — the caller does
             NOT need to invoke ``release()`` themselves.
 
-    Note on atomicity (TKT-DEEP-ONT-001-FU-3):
+    Note on atomicity (TKT-SYS-ONT-001-FU-3):
         The lease INSERT and the migration_registry INSERT are NOT in
         the same DB transaction — ``lease.py`` opens its own
         connection for the lease, and ``migration_registry.py`` opens
@@ -481,7 +481,7 @@ def claim(
                     # Happy path: fresh insert, return the new token.
                     token = int(row[0])
                     conn.commit()
-                    # TKT-DEEP-ONT-001-FU-3 (AC #5): if a V-number was
+                    # TKT-SYS-ONT-001-FU-3 (AC #5): if a V-number was
                     # supplied, durably reserve it via the registry.
                     # The registry INSERT is in a separate
                     # transaction; on collision we best-effort release
@@ -691,7 +691,7 @@ def release(
         LeaseNotFoundError: The row no longer exists (the reaper
             already deleted it).
 
-    Forensic logging (TKT-ORCH-EVOLVE-LEASE-RELEASE-PARITY, 2026-09-27):
+    Forensic logging (TKT-CORE-EVOLVE-LEASE-RELEASE-PARITY, 2026-09-27):
     every release() — success OR failure — emits a one-line ``logging``
     record carrying the DSN host/port/db + the Postgres session user
     + the transaction-isolation level. This is the diagnostic primitive
@@ -705,7 +705,7 @@ def release(
     a ``caplog`` handler (no prints).
     """
     dsn = os.environ.get("DATABASE_URL", _DEFAULT_DSN)
-    role = os.environ.get("ASTRA_DB_ROLE", _DEFAULT_DB_ROLE)
+    role = os.environ.get("ORCHESTRATOR_DB_ROLE", _DEFAULT_DB_ROLE)
     logger = logging.getLogger("orchestrator.lease")
     with _connect() as conn:
         # Capture forensic context (DSN + role + session user +
@@ -946,12 +946,12 @@ def reap_stale(now: datetime | None = None) -> int:
         # tenant). For the least-privileged ``astra_app`` role, RLS
         # means we only see the caller's own tenant's stale leases —
         # the cron job is expected to run with the per-tenant
-        # ``ASTRA_DB_TENANT`` env var set, OR to be invoked as
+        # ``ORCHESTRATOR_DB_TENANT`` env var set, OR to be invoked as
         # ``astra`` for the platform-wide sweep. Without setting the
         # GUC, RLS returns zero rows (defense in depth — the reaper
         # will be a no-op rather than a cross-tenant data leak).
-        if "ASTRA_DB_TENANT" in os.environ:
-            _set_tenant(conn, os.environ["ASTRA_DB_TENANT"])
+        if "ORCHESTRATOR_DB_TENANT" in os.environ:
+            _set_tenant(conn, os.environ["ORCHESTRATOR_DB_TENANT"])
         else:
             # Explicit clear so we don't inherit a stale GUC from a
             # previous test in the same session. RLS will return zero
@@ -981,7 +981,7 @@ def check_migration_number_collision(
     now: datetime | None = None,
 ) -> None:
     """Pre-claim guard: detect Flyway V-number collisions across live leases
-    (TKT-DEEP-ONT-001-FU-2, FOUND-001).
+    (TKT-SYS-ONT-001-FU-2, FOUND-001).
 
     Scans every live (non-expired) lease on ``orchestrator.lease`` for
     the caller's tenant. For each row, calls ``ticket_lookup`` to read
@@ -1095,7 +1095,7 @@ def check_migration_number_collision(
 
 
 # ---------------------------------------------------------------------------
-# TKT-ORCH-FIX-STATE-SYNC (2026-09-29): release_with_reconcile
+# TKT-CORE-FIX-STATE-SYNC (2026-09-29): release_with_reconcile
 # ---------------------------------------------------------------------------
 
 
@@ -1111,7 +1111,7 @@ def release_with_reconcile(
 ) -> str:
     """Release a lease AND bridge it to the reconcile queue.
 
-    TKT-ORCH-FIX-STATE-SYNC + TKT-ORCH-FIX-STATE-CONSISTENCY: this is
+    TKT-CORE-FIX-STATE-SYNC + TKT-CORE-FIX-STATE-CONSISTENCY: this is
     the chokepoint for worker-side status transitions. It:
       1. Releases the lease (atomic Postgres DELETE).
       2. Delegates to ``state.commit()`` for the frontmatter write,
@@ -1277,7 +1277,7 @@ __all__ = [
 
 
 # ---------------------------------------------------------------------------
-# CLI entrypoint (TKT-ORCH-FIX-STATE-SYNC, 2026-09-29)
+# CLI entrypoint (TKT-CORE-FIX-STATE-SYNC, 2026-09-29)
 # ---------------------------------------------------------------------------
 
 import argparse  # noqa: E402  (kept here for diff hygiene; also at module top)
@@ -1295,14 +1295,14 @@ def _cli_main(argv: list[str] | None = None) -> int:
     """
     parser = argparse.ArgumentParser(
         prog="lease",
-        description="Orchestrator lease primitives (TKT-ORCH-011).",
+        description="Orchestrator lease primitives (TKT-CORE-011).",
     )
     sub = parser.add_subparsers(dest="cmd", required=True)
 
     p_rwr = sub.add_parser(
         "release-with-reconcile",
         help="Release a lease and enqueue a reconcile event "
-             "(TKT-ORCH-FIX-STATE-SYNC).",
+             "(TKT-CORE-FIX-STATE-SYNC).",
     )
     p_rwr.add_argument("ticket_id")
     p_rwr.add_argument("tenant_id")

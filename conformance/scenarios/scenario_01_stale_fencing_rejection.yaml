@@ -1,0 +1,46 @@
+scenario: "stale-worker-rejected-by-fencing-token"
+description: "Worker A claims work, pauses; Worker B claims with higher token; Worker A's write is strictly rejected."
+steps:
+  - action: "create_work"
+    params:
+      work_id: "CONF-01"
+      title: "Conformance Fencing Test"
+    expect:
+      status: "ELIGIBLE"
+
+  - action: "claim_work"
+    params:
+      work_id: "CONF-01"
+      worker_id: "worker-A"
+    expect:
+      status: "RUNNING"
+      fencing_token: 1
+
+  - action: "simulate_crash_and_requeue"
+    params:
+      work_id: "CONF-01"
+    expect:
+      status: "ELIGIBLE"
+
+  - action: "claim_work"
+    params:
+      work_id: "CONF-01"
+      worker_id: "worker-B"
+    expect:
+      status: "RUNNING"
+      fencing_token: 2
+
+  - action: "submit_for_verification"
+    params:
+      work_id: "CONF-01"
+      fencing_token: 2
+      actor_id: "worker-B"
+    expect:
+      status: "WAITING_VERIFICATION"
+
+  - action: "submit_for_verification"
+    params:
+      work_id: "CONF-01"
+      fencing_token: 1
+      actor_id: "worker-A"
+    expect_error: "STALE_FENCING_TOKEN"

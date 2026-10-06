@@ -1,6 +1,6 @@
 """Single chokepoint for ALL orchestrator state mutations.
 
-TKT-ORCH-FIX-STATE-CONSISTENCY (2026-09-29): every status change in the
+TKT-CORE-FIX-STATE-CONSISTENCY (2026-09-29): every status change in the
 orchestrator MUST flow through ``state.commit``. This module is the
 SINGLE source of truth for ticket state transitions.
 
@@ -47,7 +47,7 @@ Public API
 
 State machine
 -------------
-Allowed transitions (per TKT-ORCH-FIX-STATE-CONSISTENCY §State machine):
+Allowed transitions (per TKT-CORE-FIX-STATE-CONSISTENCY §State machine):
 
     QUEUED         → IN_PROGRESS | BLOCKED | DEFERRED | CANCELLED
     IN_PROGRESS    → DONE | PARTIAL | PARTIAL_WITH_FOLLOW_UPS | QUEUED

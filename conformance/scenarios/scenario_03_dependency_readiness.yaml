@@ -1,0 +1,23 @@
+scenario: "dependency-readiness"
+description: "Work with unfulfilled dependencies remains PENDING until all upstream tasks succeed."
+steps:
+  - action: "create_work"
+    params:
+      work_id: "UPSTREAM-1"
+      title: "Upstream Step"
+    expect:
+      status: "ELIGIBLE"
+
+  - action: "create_work"
+    params:
+      work_id: "DOWNSTREAM-1"
+      title: "Downstream Step"
+      dependencies: ["UPSTREAM-1"]
+    expect:
+      status: "PENDING"
+
+  - action: "claim_work"
+    params:
+      work_id: "DOWNSTREAM-1"
+      worker_id: "worker-early"
+    expect_error: "INVALID_STATE_TRANSITION"

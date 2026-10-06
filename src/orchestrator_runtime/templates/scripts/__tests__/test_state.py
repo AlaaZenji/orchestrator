@@ -1,6 +1,6 @@
 """Tests for state.py — the SINGLE chokepoint for orchestrator mutations.
 
-TKT-ORCH-FIX-STATE-CONSISTENCY (2026-09-29).
+TKT-CORE-FIX-STATE-CONSISTENCY (2026-09-29).
 
 Coverage:
   - state.commit() atomic frontmatter write + event enqueue + audit row
@@ -202,12 +202,12 @@ def test_commit_ticket_not_found(fake_repo):
 def test_commit_with_extra_fields(fake_repo):
     state_mod.commit(
         "TKT-STATE-TEST", "DONE", source="test",
-        extra_fields={"doctrine_rejections": "TKT-ORCH-023"},
+        extra_fields={"doctrine_rejections": "TKT-CORE-023"},
         force=True,  # QUEUED → DONE
     )
     text = (fake_repo / "orchestrator" / "tickets"
             / "TKT-STATE-TEST.md").read_text()
-    assert "doctrine_rejections: TKT-ORCH-023" in text
+    assert "doctrine_rejections: TKT-CORE-023" in text
 
 
 # ---------------------------------------------------------------------------

@@ -1,6 +1,6 @@
 """Test that auto_reconcile.py serializes writes via fcntl.flock.
 
-TKT-ORCH-FIX-STATE-SYNC-FCNTL (2026-09-29): every write to
+TKT-CORE-FIX-STATE-SYNC-FCNTL (2026-09-29): every write to
 orchestrator/tickets-index.md is wrapped in ``_file_lock(INDEX_PATH)`` so
 two parallel reconciles cannot interleave their read-modify-write cycle.
 These tests prove:
@@ -413,6 +413,6 @@ def test_module_imports_fcntl_and_contextlib():
 def test_file_lock_docstring_mentions_ticket():
     """_file_lock docstring references the ticket for grep-ability."""
     doc = auto_reconcile._file_lock.__doc__ or ""
-    assert "TKT-ORCH-FIX-STATE-SYNC-FCNTL" in doc, (
+    assert "TKT-CORE-FIX-STATE-SYNC-FCNTL" in doc, (
         f"_file_lock docstring missing ticket reference: {doc!r}"
     )

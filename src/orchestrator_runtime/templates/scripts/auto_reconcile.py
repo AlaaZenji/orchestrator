@@ -5,7 +5,7 @@ Reads every ticket frontmatter under orchestrator/tickets/ and updates
 orchestrator/tickets-index.md at-a-glance row + relevant per-row entries.
 Saves ~10 min/layer of manual orchestrator work.
 
-Modes (TKT-ORCH-FIX-STATE-SYNC, 2026-09-29):
+Modes (TKT-CORE-FIX-STATE-SYNC, 2026-09-29):
   (no args)        -- Baseline reconcile: updates at-a-glance DONE count,
                        processes any pending events from
                        .reconcile_events.jsonl (self-heal on startup).
@@ -24,7 +24,7 @@ Modes (TKT-ORCH-FIX-STATE-SYNC, 2026-09-29):
                        orchestrator/progress/ if present.
   --dry-run        -- Print what would change; do not write.
 
-Concurrency (TKT-ORCH-FIX-STATE-SYNC-FCNTL, 2026-09-29):
+Concurrency (TKT-CORE-FIX-STATE-SYNC-FCNTL, 2026-09-29):
   Every write to tickets-index.md is wrapped in ``_file_lock(INDEX_PATH)``
   which holds an exclusive POSIX ``fcntl.flock`` on the index file. The
   prior 2-second debounce in lease.release_with_reconcile was a soft
@@ -57,7 +57,7 @@ STATE_DIR = Path(__file__).parent.parent / "state"
 PROGRESS_DIR = Path(__file__).parent.parent / "progress"
 PID_FILE = STATE_DIR / "daemon.pid"
 
-# TKT-ORCH-FIX-STATE-SYNC: reconcile queue infrastructure
+# TKT-CORE-FIX-STATE-SYNC: reconcile queue infrastructure
 RECONCILE_EVENTS_PATH = PROGRESS_DIR / ".reconcile_events.jsonl"
 RECONCILE_CHECKPOINT_PATH = PROGRESS_DIR / ".reconcile_checkpoint"
 RECONCILE_DEBOUNCE_SECONDS = 2.0
@@ -65,7 +65,7 @@ AUTO_ROW_MARKER = "<!-- cascade-row-auto -->"
 
 
 # ---------------------------------------------------------------------------
-# TKT-ORCH-FIX-STATE-SYNC-FCNTL (2026-09-29): POSIX file lock around every
+# TKT-CORE-FIX-STATE-SYNC-FCNTL (2026-09-29): POSIX file lock around every
 # INDEX_PATH write. fcntl.flock is per-file-descriptor and shared across
 # processes, so two parallel reconciles serialize through the lock. On
 # macOS the BSD-style flock is fully supported; on Linux it is the
@@ -79,7 +79,7 @@ AUTO_ROW_MARKER = "<!-- cascade-row-auto -->"
 def _file_lock(path: Path):
     """Acquire an exclusive ``fcntl.flock`` on ``path``.
 
-    TKT-ORCH-FIX-STATE-SYNC-FCNTL (2026-09-29): opens ``path`` with
+    TKT-CORE-FIX-STATE-SYNC-FCNTL (2026-09-29): opens ``path`` with
     O_RDWR|O_CREAT (mode 0o644), holds LOCK_EX for the duration of the
     ``with`` block, and releases via LOCK_UN + os.close in ``finally``.
     If ``os.close`` or ``flock`` fails (e.g. fd already closed), we
@@ -105,7 +105,7 @@ def _file_lock(path: Path):
         os.close(fd)
 
 # _parse_etime_hours is owned by burnqueue_daemon.py (moved there so the
-# daemon is the canonical owner of its own helpers; TKT-ORCH-PERF-001 review).
+# daemon is the canonical owner of its own helpers; TKT-CORE-PERF-001 review).
 # We import it lazily so auto_reconcile.py still works even if the daemon
 # is missing (e.g., fresh checkout).
 try:
@@ -164,7 +164,7 @@ def find_ticket_file(ticket_id: str) -> Path | None:
 
 
 # ---------------------------------------------------------------------------
-# TKT-ORCH-FIX-STATE-SYNC: event-driven reconcile queue
+# TKT-CORE-FIX-STATE-SYNC: event-driven reconcile queue
 # ---------------------------------------------------------------------------
 
 
@@ -240,7 +240,7 @@ def append_cascade_row_to_index(ticket_id: str, row_text: str,
     :data:`AUTO_ROW_MARKER` comment so the ``--rebuild`` mode can
     distinguish auto-generated rows from hand-written narrative rows.
 
-    TKT-ORCH-FIX-STATE-SYNC-FCNTL: the read+parse+write cycle is held
+    TKT-CORE-FIX-STATE-SYNC-FCNTL: the read+parse+write cycle is held
     under ``_file_lock(INDEX_PATH)`` so two parallel callers cannot race
     and lose a row. ``dry_run=True`` skips the lock (no write happens).
     """
@@ -294,7 +294,7 @@ def update_at_a_glance_done_count(done_count: int, dry_run: bool = False) -> boo
 
     Returns True if a write happened.
 
-    TKT-ORCH-FIX-STATE-SYNC-FCNTL: the read+regex+write cycle is held
+    TKT-CORE-FIX-STATE-SYNC-FCNTL: the read+regex+write cycle is held
     under ``_file_lock(INDEX_PATH)`` so two parallel callers cannot
     race on the read-modify-write.
     """
@@ -547,7 +547,7 @@ def run_rebuild(dry_run: bool = False) -> bool:
     rewrites every cascade delta row that carries the AUTO_ROW_MARKER.
     Hand-written narrative rows (no marker) are preserved verbatim.
 
-    TKT-ORCH-FIX-STATE-SYNC-FCNTL: the read + recompute + write cycle
+    TKT-CORE-FIX-STATE-SYNC-FCNTL: the read + recompute + write cycle
     is held under ``_file_lock(INDEX_PATH)`` so a rebuild cannot race
     with an in-flight ``append_cascade_row_to_index`` (otherwise the
     append could be overwritten by the rebuild's snapshot).
@@ -675,7 +675,7 @@ def main():
 
     # Default: baseline reconcile (preserve original behaviour + self-heal).
     # Use the tolerant counter (handles "DONE (suffix)", "DONE # comment",
-    # "DRAFT", "LANDED", etc.) — TKT-ORCH-FIX-STATE-SYNC.
+    # "DRAFT", "LANDED", etc.) — TKT-CORE-FIX-STATE-SYNC.
     by_status = count_tickets_by_status()
     by_priority = {"P0": 0, "P1": 0, "P2": 0, "P3": 0, "OTHER": 0}
 
@@ -707,7 +707,7 @@ def main():
     print(f"By priority: {by_priority}")
 
     # Update at-a-glance row (original behaviour).
-    # TKT-ORCH-FIX-STATE-SYNC-FCNTL: the read+regex+write cycle is held
+    # TKT-CORE-FIX-STATE-SYNC-FCNTL: the read+regex+write cycle is held
     # under ``_file_lock(INDEX_PATH)`` so two parallel baselines cannot
     # race on the read-modify-write.
     if not args.dry_run:
@@ -725,7 +725,7 @@ def main():
             else:
                 print(f"\n✓ tickets-index.md already correct")
 
-    # TKT-ORCH-FIX-STATE-SYNC: self-heal — process any pending events.
+    # TKT-CORE-FIX-STATE-SYNC: self-heal — process any pending events.
     # This way, even an ad-hoc `auto_reconcile.py` (no args) drains the
     # queue. If anything was pending, the user sees a one-line summary.
     if RECONCILE_EVENTS_PATH.exists():
@@ -738,7 +738,7 @@ def main():
             if n:
                 print(f"✅ Self-heal processed {n} events")
 
-    # TKT-ORCH-FIX-STATE-CONSISTENCY (2026-09-29): every reconcile pass
+    # TKT-CORE-FIX-STATE-CONSISTENCY (2026-09-29): every reconcile pass
     # also runs state.audit() so drift findings are surfaced immediately.
     # If --fail-on-drift is set, exit non-zero so the calling context
     # (burn_queue, daemon, CI) sees the drift.
@@ -762,7 +762,7 @@ def main():
     except Exception as exc:
         print(f"\n=== STATE AUDIT (skipped: {exc}) ===")
 
-    # FU chain depth distribution (TKT-ORCH-PERF-002, 2026-09-28).
+    # FU chain depth distribution (TKT-CORE-PERF-002, 2026-09-28).
     # Excludes TKT-AGITA-FU-* (the AGITA backfill type prefix, not a real
     # FU-chain suffix — the metric would otherwise inflate depth-1).
     fu_depth_counts = {0: 0, 1: 0, 2: 0, 3: 0}
@@ -790,7 +790,7 @@ def main():
         except Exception:
             pass
     print(f"  fu_chain_total (depth ≥ 1): {fu_chain_total}")
-    print(f"\n=== FU CHAIN DEPTH (TKT-ORCH-PERF-002) ===")
+    print(f"\n=== FU CHAIN DEPTH (TKT-CORE-PERF-002) ===")
     print(f"  depth 0 (root): {fu_depth_counts[0]}")
     print(f"  depth 1:        {fu_depth_counts[1]}")
     print(f"  depth 2:        {fu_depth_counts[2]}")
@@ -798,8 +798,8 @@ def main():
     drift_per_hour = 0.25  # baseline from burn-rate investigation; live measurement TBD
     print(f"  drift_rate_per_hour (baseline): {drift_per_hour}")
 
-    # Daemon status (TKT-ORCH-PERF-001, 2026-09-28).
-    # Note: pidfile format is `<pid>:<epoch>` (TKT-ORCH-PERF-001 PID-reuse
+    # Daemon status (TKT-CORE-PERF-001, 2026-09-28).
+    # Note: pidfile format is `<pid>:<epoch>` (TKT-CORE-PERF-001 PID-reuse
     # defense — kernel can recycle a PID after process death; the epoch is
     # the start time). Split on `:` to recover the pid.
     print(f"\n=== DAEMON STATUS ===")

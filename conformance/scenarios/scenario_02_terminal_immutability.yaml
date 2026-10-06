@@ -1,0 +1,36 @@
+scenario: "terminal-state-immutability"
+description: "A work that has reached SUCCEEDED cannot transition to any other status."
+steps:
+  - action: "create_work"
+    params:
+      work_id: "CONF-02"
+      title: "Terminal Immutability Test"
+    expect:
+      status: "ELIGIBLE"
+
+  - action: "claim_work"
+    params:
+      work_id: "CONF-02"
+      worker_id: "worker-1"
+    expect:
+      status: "RUNNING"
+
+  - action: "submit_for_verification"
+    params:
+      work_id: "CONF-02"
+      actor_id: "worker-1"
+    expect:
+      status: "WAITING_VERIFICATION"
+
+  - action: "record_verdict"
+    params:
+      work_id: "CONF-02"
+      passed: true
+    expect:
+      status: "SUCCEEDED"
+
+  - action: "claim_work"
+    params:
+      work_id: "CONF-02"
+      worker_id: "rogue-worker"
+    expect_error: "INVALID_STATE_TRANSITION"

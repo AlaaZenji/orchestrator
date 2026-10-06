@@ -322,7 +322,7 @@ def _copy_tree(
     are skipped — this preserves user customizations during install.
     If ``overwrite`` is True (used by re-sync/upgrade modes), existing files
     are overwritten so that engine updates propagate to bootstrapped projects
-    (TKT-ORCH-FIX-STATE-SYNC-CROSS-PROJECT, 2026-09-29).
+    (TKT-CORE-FIX-STATE-SYNC-CROSS-PROJECT, 2026-09-29).
     """
     written = []
     if not src.exists():

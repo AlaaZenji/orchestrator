@@ -1,6 +1,6 @@
 """Test the --incremental mode of auto_reconcile.py.
 
-TKT-ORCH-FIX-STATE-SYNC (2026-09-29): drain the reconcile-events queue,
+TKT-CORE-FIX-STATE-SYNC (2026-09-29): drain the reconcile-events queue,
 append one cascade delta row per event to tickets-index.md, update the
 at-a-glance DONE count, and truncate the events file. Idempotent:
 applying the same event twice is a no-op.

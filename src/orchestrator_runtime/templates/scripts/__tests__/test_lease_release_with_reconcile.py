@@ -1,4 +1,4 @@
-"""Test lease.release_with_reconcile (TKT-ORCH-FIX-STATE-SYNC).
+"""Test lease.release_with_reconcile (TKT-CORE-FIX-STATE-SYNC).
 
 The bridge function that workers MUST call instead of release_or_idempotent.
 Verifies that:
